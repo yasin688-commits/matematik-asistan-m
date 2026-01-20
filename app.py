@@ -144,73 +144,165 @@ if "history" not in st.session_state:
 def generate_4th_grade_question(topic: str):
     """4. sınıf için farklı konu tiplerinde yeni nesil soru üretir."""
     if topic == "Toplama / Çıkarma":
-        a = random.randint(30, 95)
-        b = random.randint(10, 65)
-        c = random.randint(5, 35)
+        variant = random.choice([1, 2, 3])
+        difficulty = 1 if variant in (1, 2) else 2
 
-        question = (
-            f"Bir kırtasiyede sabah {a} tane kalem satılıyor. "
-            f"Öğleden sonra sabah satılandan {b} tane daha az kalem satılıyor. "
-            f"Gün sonunda depoda {c} kalem kaldığına göre, bu kırtasiyede başlangıçta kaç kalem vardı?"
-        )
+        if variant == 1:
+            a = random.randint(30, 95)
+            b = random.randint(10, 65)
+            c = random.randint(5, 35)
 
-        sold_morning = a
-        sold_afternoon = a - b
-        total_sold = sold_morning + sold_afternoon
-        answer = total_sold + c
+            question = (
+                f"Bir kırtasiyede sabah {a} tane kalem satılıyor. "
+                f"Öğleden sonra sabah satılandan {b} tane daha az kalem satılıyor. "
+                f"Gün sonunda depoda {c} kalem kaldığına göre, bu kırtasiyede başlangıçta kaç kalem vardı?"
+            )
 
-        explanation = (
-            f"Sabah satılan: {sold_morning} kalem\n"
-            f"Öğleden sonra satılan: {sold_afternoon} kalem\n"
-            f"Toplam satılan: {sold_morning} + {sold_afternoon} = {total_sold} kalem\n"
-            f"Depoda kalan: {c} kalem\n"
-            f"Başlangıçtaki miktar: {total_sold} + {c} = {answer} kalem"
-        )
+            sold_morning = a
+            sold_afternoon = a - b
+            total_sold = sold_morning + sold_afternoon
+            answer = total_sold + c
 
-        difficulty = 1
+            explanation = (
+                f"Sabah satılan: {sold_morning} kalem\n"
+                f"Öğleden sonra satılan: {sold_afternoon} kalem\n"
+                f"Toplam satılan: {sold_morning} + {sold_afternoon} = {total_sold} kalem\n"
+                f"Depoda kalan: {c} kalem\n"
+                f"Başlangıçtaki miktar: {total_sold} + {c} = {answer} kalem"
+            )
+
+        elif variant == 2:
+            a = random.randint(120, 280)
+            b = random.randint(40, 110)
+            c = random.randint(20, 90)
+
+            question = (
+                f"Bir okulun kütüphanesine önce {a} kitap alındı. "
+                f"Daha sonra {b} kitap daha eklendi. "
+                f"Bir süre sonra {c} kitap başka bir okula gönderildi.\n\n"
+                f"Buna göre kütüphanede kaç kitap kalmıştır?"
+            )
+            answer = a + b - c
+            explanation = (
+                f"Önceki kitap sayısı: {a}\n"
+                f"Eklenen kitap: {b} → {a} + {b} = {a + b}\n"
+                f"Gönderilen kitap: {c} → {a + b} - {c} = {answer}"
+            )
+
+        else:
+            a = random.randint(80, 160)
+            b = random.randint(20, 60)
+            c = random.randint(15, 55)
+
+            question = (
+                f"Bir markette {a} litre süt vardı. "
+                f"Sabah {b} litre süt satıldı. "
+                f"Öğleden sonra {c} litre süt daha satıldı.\n\n"
+                f"Marketin elinde kaç litre süt kalmıştır?"
+            )
+            answer = a - b - c
+            explanation = (
+                f"Başlangıç: {a} litre\n"
+                f"Sabah satılan: {b} → Kalan: {a} - {b} = {a - b}\n"
+                f"Öğleden sonra satılan: {c} → Kalan: {a - b} - {c} = {answer}"
+            )
 
     elif topic == "Çarpma / Bölme":
-        a = random.randint(3, 9)
-        b = random.randint(4, 8)
-        c = random.randint(2, 4)
+        variant = random.choice([1, 2, 3])
+        difficulty = 1 if variant in (1, 2) else 2
 
-        question = (
-            f"Bir sınıftaki her sırada {a} öğrenci oturuyor. "
-            f"Sınıfta {b} sıra vardır. Okulda bu sınıftan {c} tane olduğunu biliyoruz.\n\n"
-            f"Buna göre bu okuldaki bu sınıflarda toplam kaç öğrenci vardır?"
-        )
+        if variant == 1:
+            a = random.randint(3, 9)
+            b = random.randint(4, 8)
+            c = random.randint(2, 4)
 
-        answer_one_class = a * b
-        answer = answer_one_class * c
-        explanation = (
-            f"Bir sınıftaki öğrenci sayısı: {a} × {b} = {answer_one_class}\n"
-            f"Bu sınıflardan {c} tane olduğuna göre: "
-            f"{answer_one_class} × {c} = {answer}"
-        )
+            question = (
+                f"Bir sınıftaki her sırada {a} öğrenci oturuyor. "
+                f"Sınıfta {b} sıra vardır. Okulda bu sınıftan {c} tane olduğunu biliyoruz.\n\n"
+                f"Buna göre bu okuldaki bu sınıflarda toplam kaç öğrenci vardır?"
+            )
 
-        difficulty = 1
+            answer_one_class = a * b
+            answer = answer_one_class * c
+            explanation = (
+                f"Bir sınıftaki öğrenci sayısı: {a} × {b} = {answer_one_class}\n"
+                f"Bu sınıflardan {c} tane olduğuna göre: "
+                f"{answer_one_class} × {c} = {answer}"
+            )
+
+        elif variant == 2:
+            a = random.randint(4, 9)
+            b = random.randint(6, 12)
+            question = (
+                f"Bir fırın sabah {a} tepsi kurabiye yaptı. "
+                f"Her tepside {b} kurabiye olduğuna göre, toplam kaç kurabiye yapılmıştır?"
+            )
+            answer = a * b
+            explanation = f"Toplam kurabiye: {a} × {b} = {answer}"
+
+        else:
+            total = random.randint(72, 144)
+            per_box = random.choice([6, 8, 9, 12])
+            question = (
+                f"Bir oyuncakçıya {total} tane balon geldi. "
+                f"Balonlar {per_box}'erli paketlere ayrılacaktır.\n\n"
+                f"Kaç paket balon olur?"
+            )
+            answer = total // per_box
+            explanation = f"Paket sayısı: {total} ÷ {per_box} = {answer}"
 
     else:  # Zihinden işlem / problem çözme
-        a = random.randint(100, 250)
-        b = random.randint(20, 90)
-        c = random.randint(10, 60)
-
-        question = (
-            f"Ali, kütüphanedeki kitapların {b} tanesini sınıfa götürüyor. "
-            f"Kütüphanede başlangıçta {a} kitap vardı. "
-            f"Ertesi gün sınıftan {c} kitap geri getiriliyor.\n\n"
-            f"Buna göre kütüphanede şimdi kaç kitap vardır?"
-        )
-
-        after_take = a - b
-        answer = after_take + c
-        explanation = (
-            f"Başlangıçtaki kitap sayısı: {a}\n"
-            f"Sınıfa giden: {b} kitap → Kalan: {a} - {b} = {after_take}\n"
-            f"Geri gelen: {c} kitap → Son durum: {after_take} + {c} = {answer}"
-        )
-
+        variant = random.choice([1, 2, 3])
         difficulty = 2
+
+        if variant == 1:
+            a = random.randint(100, 250)
+            b = random.randint(20, 90)
+            c = random.randint(10, 60)
+
+            question = (
+                f"Ali, kütüphanedeki kitapların {b} tanesini sınıfa götürüyor. "
+                f"Kütüphanede başlangıçta {a} kitap vardı. "
+                f"Ertesi gün sınıftan {c} kitap geri getiriliyor.\n\n"
+                f"Buna göre kütüphanede şimdi kaç kitap vardır?"
+            )
+
+            after_take = a - b
+            answer = after_take + c
+            explanation = (
+                f"Başlangıçtaki kitap sayısı: {a}\n"
+                f"Sınıfa giden: {b} kitap → Kalan: {a} - {b} = {after_take}\n"
+                f"Geri gelen: {c} kitap → Son durum: {after_take} + {c} = {answer}"
+            )
+
+        elif variant == 2:
+            a = random.randint(180, 360)
+            b = random.randint(40, 120)
+            c = random.randint(25, 95)
+            question = (
+                f"Bir geziye {a} kişi katıldı. "
+                f"Öğle yemeğinde {b} kişi ayrıldı. "
+                f"Akşam yemeğine ise öğleden sonra {c} kişi daha katıldı.\n\n"
+                f"Akşam yemeğinde toplam kaç kişi vardır?"
+            )
+            answer = a - b + c
+            explanation = (
+                f"Başlangıç: {a}\n"
+                f"Ayrılan: {b} → Kalan: {a} - {b} = {a - b}\n"
+                f"Katılan: {c} → Son: {a - b} + {c} = {answer}"
+            )
+
+        else:
+            a = random.randint(90, 210)
+            b = random.randint(25, 80)
+            c = random.randint(10, 50)
+            question = (
+                f"Bir otobüste {a} yolcu vardı. "
+                f"Bir durakta {b} yolcu indi, {c} yolcu bindi.\n\n"
+                f"Otobüste kaç yolcu olmuştur?"
+            )
+            answer = a - b + c
+            explanation = f"Son yolcu sayısı: {a} - {b} + {c} = {answer}"
 
     return question, answer, explanation, difficulty
 
@@ -218,69 +310,159 @@ def generate_4th_grade_question(topic: str):
 def generate_5th_grade_question(topic: str):
     """5. sınıf için yeni nesil, daha çok çoklu işlem içeren sorular üretir."""
     if topic == "Doğal Sayılar / İşlemler":
-        a = random.randint(120, 480)
-        b = random.randint(3, 9)
-        c = random.randint(2, 7)
-
-        question = (
-            f"Bir fabrikada her gün eşit sayıda oyuncak üretiliyor. "
-            f"Bu fabrika {b} günde toplam {a} oyuncak üretiyor.\n\n"
-            f"Daha sonra üretim hızı artırılıyor ve günde üretilen oyuncak sayısı {c} katına çıkıyor.\n"
-            f"Yeni üretim hızına göre bu fabrika 1 günde kaç oyuncak üretir?"
-        )
-
-        per_day = a // b
-        answer = per_day * c
-        explanation = (
-            f"{b} günde {a} oyuncak → Günde üretilen: {a} ÷ {b} = {per_day}\n"
-            f"Üretim {c} katına çıktı → Yeni hız: {per_day} × {c} = {answer}"
-        )
-
+        variant = random.choice([1, 2, 3])
         difficulty = 2
+
+        if variant == 1:
+            a = random.randint(120, 480)
+            b = random.randint(3, 9)
+            c = random.randint(2, 7)
+
+            question = (
+                f"Bir fabrikada her gün eşit sayıda oyuncak üretiliyor. "
+                f"Bu fabrika {b} günde toplam {a} oyuncak üretiyor.\n\n"
+                f"Daha sonra üretim hızı artırılıyor ve günde üretilen oyuncak sayısı {c} katına çıkıyor.\n"
+                f"Yeni üretim hızına göre bu fabrika 1 günde kaç oyuncak üretir?"
+            )
+
+            per_day = a // b
+            answer = per_day * c
+            explanation = (
+                f"{b} günde {a} oyuncak → Günde üretilen: {a} ÷ {b} = {per_day}\n"
+                f"Üretim {c} katına çıktı → Yeni hız: {per_day} × {c} = {answer}"
+            )
+
+        elif variant == 2:
+            total = random.randint(240, 720)
+            days = random.randint(4, 9)
+            extra = random.randint(15, 60)
+            question = (
+                f"Bir atölye {days} günde toplam {total} parça üretiyor. "
+                f"Son gün, diğer günlerden {extra} parça daha fazla üretmiştir.\n\n"
+                f"Buna göre son gün kaç parça üretilmiştir?"
+            )
+            # (days-1)*x + (x+extra) = total => days*x + extra = total
+            x = (total - extra) // days
+            answer = x + extra
+            explanation = (
+                f"Diğer günlerin günlük üretimi x olsun.\n"
+                f"({days}-1)·x + (x + {extra}) = {total} ⇒ {days}·x + {extra} = {total}\n"
+                f"{days}·x = {total - extra} ⇒ x = {(total - extra)} ÷ {days} = {x}\n"
+                f"Son gün: x + {extra} = {x} + {extra} = {answer}"
+            )
+            difficulty = 3
+
+        else:
+            a = random.randint(18, 60)
+            b = random.randint(10, 40)
+            c = random.randint(2, 6)
+            question = (
+                f"Bir okulda her sınıfta {a} öğrenci vardır. "
+                f"Bu okulda {b} sınıf olduğuna göre okuldaki toplam öğrenci sayısı kaçtır?\n\n"
+                f"Okul, toplam öğrenci sayısının {c} katı kadar kitap bağışı yaparsa kaç kitap bağışlar?"
+            )
+            total_students = a * b
+            answer = total_students * c
+            explanation = (
+                f"Toplam öğrenci: {a} × {b} = {total_students}\n"
+                f"Kitap bağışı: {total_students} × {c} = {answer}"
+            )
 
     elif topic == "Oran / Orantı":
-        a = random.randint(2, 5)
-        b = a * random.randint(2, 4)  # orantılı sayı
-        c = random.randint(30, 80)
-
-        question = (
-            f"Bir pastanın tarifinde {a} bardak un kullanıldığında "
-            f"{c} gram şeker kullanılıyor.\n\n"
-            f"Aynı oranda hazırlanmış daha büyük bir pastada {b} bardak un kullanılırsa "
-            f"kaç gram şeker kullanılması gerekir?"
-        )
-
-        scale = b / a
-        answer = int(c * scale)
-        explanation = (
-            f"Un miktarı {a} bardaktan {b} bardağa çıkıyor.\n"
-            f"Oran: {b} ÷ {a} = {scale}\n"
-            f"Şeker miktarı da aynı oranda artar: {c} × {scale} = {answer}"
-        )
-
+        variant = random.choice([1, 2, 3])
         difficulty = 3
 
+        if variant == 1:
+            a = random.randint(2, 5)
+            b = a * random.randint(2, 4)  # orantılı sayı
+            c = random.randint(30, 80)
+
+            question = (
+                f"Bir pastanın tarifinde {a} bardak un kullanıldığında "
+                f"{c} gram şeker kullanılıyor.\n\n"
+                f"Aynı oranda hazırlanmış daha büyük bir pastada {b} bardak un kullanılırsa "
+                f"kaç gram şeker kullanılması gerekir?"
+            )
+
+            scale = b / a
+            answer = int(c * scale)
+            explanation = (
+                f"Un miktarı {a} bardaktan {b} bardağa çıkıyor.\n"
+                f"Oran: {b} ÷ {a} = {scale}\n"
+                f"Şeker miktarı da aynı oranda artar: {c} × {scale} = {answer}"
+            )
+
+        elif variant == 2:
+            x = random.randint(3, 7)
+            y = random.randint(2, 6)
+            a = x
+            b = x * random.randint(2, 4)
+            c = y * random.randint(10, 25)
+            question = (
+                f"Bir karışım {a}:{y} oranında hazırlanıyor. "
+                f"Yani {a} ölçü A maddesine karşılık {y} ölçü B maddesi kullanılıyor.\n\n"
+                f"A maddesi {b} ölçü olursa B maddesi kaç ölçü olmalıdır?"
+            )
+            answer = int((b / a) * y)
+            explanation = (
+                f"Oran sabit: A {a} ise B {y}\n"
+                f"A {b} olunca çarpan: {b} ÷ {a} = {b / a}\n"
+                f"B: {y} × {b / a} = {answer}"
+            )
+
+        else:
+            a = random.randint(4, 10)
+            b = a * random.randint(2, 5)
+            c = random.randint(8, 20)
+            question = (
+                f"Bir araç {a} litre yakıt ile {c} km yol gidiyor.\n\n"
+                f"Aynı şartlarda {b} litre yakıt ile kaç km yol gider?"
+            )
+            scale = b / a
+            answer = int(c * scale)
+            explanation = f"{b} litre, {a} litrenin {scale} katı → {c} × {scale} = {answer} km"
+
     else:  # Geometri / çevre - alan
-        a = random.randint(8, 20)
-        b = random.randint(6, 18)
-
-        question = (
-            f"Uzun kenarı {a} cm, kısa kenarı {b} cm olan dikdörtgen şeklinde "
-            f"bir bahçe vardır.\n"
-            f"Bahçenin etrafına 1 metre arayla fidan dikilecektir. "
-            f"(1 metre = 100 cm)\n\n"
-            f"Buna göre bahçenin etrafına toplam kaç fidan dikilir?"
-        )
-
-        perimeter_cm = 2 * (a + b)
-        answer = perimeter_cm // 100
-        explanation = (
-            f"Dikdörtgenin çevresi: 2 × ({a} + {b}) = {perimeter_cm} cm\n"
-            f"Her 100 cm'de (= 1 m) 1 fidan dikiliyor.\n"
-            f"Toplam fidan sayısı: {perimeter_cm} ÷ 100 = {answer}"
-        )
-
+        variant = random.choice([1, 2, 3])
         difficulty = 2
+
+        if variant == 1:
+            a = random.randint(80, 220)  # cm
+            b = random.randint(60, 180)  # cm
+
+            question = (
+                f"Uzun kenarı {a} cm, kısa kenarı {b} cm olan dikdörtgen şeklinde "
+                f"bir bahçe vardır.\n"
+                f"Bahçenin etrafına 1 metre arayla fidan dikilecektir. "
+                f"(1 metre = 100 cm)\n\n"
+                f"Buna göre bahçenin etrafına toplam kaç fidan dikilir?"
+            )
+
+            perimeter_cm = 2 * (a + b)
+            answer = perimeter_cm // 100
+            explanation = (
+                f"Dikdörtgenin çevresi: 2 × ({a} + {b}) = {perimeter_cm} cm\n"
+                f"Her 100 cm'de (= 1 m) 1 fidan dikiliyor.\n"
+                f"Toplam fidan sayısı: {perimeter_cm} ÷ 100 = {answer}"
+            )
+
+        elif variant == 2:
+            a = random.randint(6, 18)  # cm
+            b = random.randint(5, 16)  # cm
+            question = (
+                f"Kenarları {a} cm ve {b} cm olan dikdörtgenin çevresi kaç cm'dir?"
+            )
+            answer = 2 * (a + b)
+            explanation = f"Çevre = 2 × ({a} + {b}) = {answer}"
+
+        else:
+            a = random.randint(6, 18)
+            b = random.randint(5, 16)
+            question = (
+                f"Kenarları {a} cm ve {b} cm olan dikdörtgenin alanı kaç cm²'dir?"
+            )
+            answer = a * b
+            explanation = f"Alan = {a} × {b} = {answer} cm²"
 
     return question, answer, explanation, difficulty
 
@@ -467,6 +649,20 @@ def render_home():
         "Uygulama, MEB kazanımlarına uygun şekilde tasarlanmış örnek sorular ve "
         "profesyonel bir arayüz sunar. Sol taraftan **Test Modu**'na geçip hemen dene."
     )
+
+    with st.expander("🧪 Örnek Yeni Nesil Sorular (Önizleme)"):
+        st.caption("Her yenilemede farklı örnekler gelir. Asıl çözme ekranı için sol menüden **Test Modu**'nu seç.")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("**4. Sınıf – Örnek**")
+            q, a, _, d = generate_question("4. Sınıf", random.choice(["Toplama / Çıkarma", "Çarpma / Bölme", "Problem Çözme"]))
+            st.write(q)
+            st.caption(f"Zorluk: {d} · Cevap: {a}")
+        with c2:
+            st.markdown("**5. Sınıf – Örnek**")
+            q, a, _, d = generate_question("5. Sınıf", random.choice(["Doğal Sayılar / İşlemler", "Oran / Orantı", "Geometri (Çevre / Alan)"]))
+            st.write(q)
+            st.caption(f"Zorluk: {d} · Cevap: {a}")
 
 
 # --------------------
@@ -665,8 +861,11 @@ def main():
         render_home()
     elif page_key == "test":
         render_test(level, topic)
-    else:
+    elif page_key == "stats":
         render_stats()
+    else:
+        st.session_state.page = "home"
+        st.rerun()
 
     st.markdown(
         '<div class="footer-text">© '

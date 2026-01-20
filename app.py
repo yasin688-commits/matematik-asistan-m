@@ -660,6 +660,7 @@ def generate_turkce_question(level: str):
     choices = list(dict.fromkeys([c.strip() for c in choices]))[:4]
     random.shuffle(choices)
     return {
+        "id": _question_id("Türkçe", level, "Yazım Kuralları", sentence, correct),
         "q": "Görseldeki cümlede yanlış yazılan kelimenin doğru yazımı hangisidir?",
         "type": "choice",
         "choices": choices,
@@ -696,6 +697,7 @@ def generate_fen_question(level: str):
     choices = list(dict.fromkeys(choices))
     random.shuffle(choices)
     return {
+        "id": _question_id("Fen Bilimleri", level, "Besin Zinciri", " → ".join(shown), missing),
         "q": "Besin zincirinde boş bırakılan yere hangisi gelmelidir?",
         "type": "choice",
         "choices": choices,
@@ -717,6 +719,7 @@ def generate_sosyal_question(level: str):
     idx = values.index(max(values))
     answer = cities[idx]
     return {
+        "id": _question_id("Sosyal Bilgiler", level, "Grafik Okuma", f"{cities}:{values}", answer),
         "q": "Grafiğe göre değeri en yüksek olan şehir hangisidir?",
         "type": "choice",
         "choices": cities,
@@ -754,6 +757,7 @@ def generate_english_question(level: str):
     choices = random.sample(distractors, k=3) + [tr]
     random.shuffle(choices)
     return {
+        "id": _question_id("İngilizce", level, "Kelime", en, tr),
         "q": f"'{en}' kelimesinin Türkçe anlamı hangisidir?",
         "type": "choice",
         "choices": choices,
@@ -784,6 +788,7 @@ def generate_tarih_question(level: str):
     choices = [e[1] for e in chosen_sorted]
     random.shuffle(choices)
     return {
+        "id": _question_id("Tarih", level, "Zaman Çizgisi", f"{chosen_sorted}", answer),
         "q": "Zaman çizgisine göre en önce gerçekleşen olay hangisidir?",
         "type": "choice",
         "choices": choices,
@@ -818,6 +823,7 @@ def generate_cografya_question(level: str):
     answer = horiz if abs(dx) >= abs(dy) else vert
     choices = ["kuzeyinde", "güneyinde", "doğusunda", "batısında"]
     return {
+        "id": _question_id("Coğrafya", level, "Yönler", f"{src}->{dst}", answer),
         "q": f"Haritaya göre **{dst}**, **{src}** noktasının daha çok hangisindedir?",
         "type": "choice",
         "choices": choices,
@@ -858,11 +864,13 @@ def reset_question():
     st.session_state.question_data = None
 
 
-def record_result(correct: bool, user_answer, correct_answer, level, subject, topic, difficulty):
+def record_result(correct: bool, user_answer, correct_answer, level, subject, topic, difficulty, question_id: str | None):
     st.session_state.total_questions += 1
     if correct:
         st.session_state.correct_answers += 1
         st.session_state.score += 10 * difficulty
+        if question_id:
+            st.session_state.seen_correct.add(question_id)
 
     if subject not in st.session_state.subject_stats:
         st.session_state.subject_stats[subject] = {"total": 0, "correct": 0}
@@ -878,6 +886,7 @@ def record_result(correct: bool, user_answer, correct_answer, level, subject, to
             "subject": subject,
             "topic": topic,
             "difficulty": difficulty,
+            "question_id": question_id,
             "user_answer": user_answer,
             "correct_answer": correct_answer,
             "correct": correct,
@@ -995,6 +1004,7 @@ def render_sidebar():
             st.session_state.correct_answers = 0
             st.session_state.history = []
             st.session_state.subject_stats = {}
+            st.session_state.seen_correct = set()
             reset_question()
 
         return subject, level, topic
@@ -1081,22 +1091,36 @@ def render_test(subject: str, level: str, topic: str | None):
     st.markdown("### 📝 Yeni Nesil Soru")
 
     if st.session_state.question_data is None:
-        if subject == "Matematik":
-            q, a, exp, diff = generate_question(level, topic or "Toplama / Çıkarma")
-            st.session_state.question_data = {
-                "q": q,
-                "a": a,
-                "explanation": exp,
-                "difficulty": diff,
-                "level": level,
-                "topic": topic or "Toplama / Çıkarma",
-                "subject": "Matematik",
-                "type": "choice",
-                "choices": _make_numeric_choices(a, k=4),
-                "image": None,
-            }
+        max_tries = 30
+        for _ in range(max_tries):
+            if subject == "Matematik":
+                the_topic = topic or "Toplama / Çıkarma"
+                q, a, exp, diff = generate_question(level, the_topic)
+                qid = _question_id("Matematik", level, the_topic, q, a)
+                candidate = {
+                    "id": qid,
+                    "q": q,
+                    "a": a,
+                    "explanation": exp,
+                    "difficulty": diff,
+                    "level": level,
+                    "topic": the_topic,
+                    "subject": "Matematik",
+                    "type": "choice",
+                    "choices": _make_numeric_choices(a, k=4),
+                    "image": None,
+                }
+            else:
+                candidate = generate_subject_question(subject, level)
+
+            # Doğru yapılan sorular tekrar sorulmasın
+            cid = candidate.get("id")
+            if not cid or cid not in st.session_state.seen_correct:
+                st.session_state.question_data = candidate
+                break
         else:
-            st.session_state.question_data = generate_subject_question(subject, level)
+            # Çok nadir: havuz tükendi/çok tekrar var
+            st.session_state.question_data = candidate
 
     qdata = st.session_state.question_data
 
@@ -1162,6 +1186,7 @@ def render_test(subject: str, level: str, topic: str | None):
                 subject=qdata.get("subject", subject),
                 topic=qdata["topic"],
                 difficulty=qdata["difficulty"],
+                question_id=qdata.get("id"),
             )
 
             if correct:

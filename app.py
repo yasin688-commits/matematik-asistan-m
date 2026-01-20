@@ -1,5 +1,6 @@
 import random
 import io
+import hashlib
 from datetime import datetime
 
 import streamlit as st
@@ -143,6 +144,10 @@ if "subject_stats" not in st.session_state:
     # subject -> {"total": int, "correct": int}
     st.session_state.subject_stats = {}
 
+if "seen_correct" not in st.session_state:
+    # Doğru yapılan sorular tekrar sorulmaz (id set)
+    st.session_state.seen_correct = set()
+
 
 # --------------------
 # SORU ÜRETİCİLER
@@ -254,6 +259,10 @@ def _mini_map_image(points: dict[str, tuple[int, int]], title: str) -> bytes:
 
 def _normalize_text(s: str) -> str:
     return (s or "").strip().casefold()
+
+def _question_id(subject: str, level: str, topic: str, q: str, a) -> str:
+    base = f"{subject}|{level}|{topic}|{q}|{a}"
+    return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
 
 
 def _make_numeric_choices(answer: int, k: int = 4) -> list[int]:

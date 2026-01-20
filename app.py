@@ -1,130 +1,129 @@
 import streamlit as st
 import random
 import time
-import pandas as pd
 
-# --- SAYFA YAPILANDIRMASI (MOBİL GÖRÜNÜM ODAKLI) ---
-st.set_page_config(page_title="Yusuf AI: Akıllı Akademi", page_icon="📱", layout="centered")
+# --- SAYFA AYARLARI ---
+st.set_page_config(page_title="Yusuf AI: Sınav Merkezi", page_icon="📝", layout="centered")
 
-# --- PROFESYONEL MOBİL TASARIM (Görsellerdeki Stil) ---
+# --- MODERN UI (Görsellerdeki Mobil Uygulama Stili) ---
 st.markdown("""
     <style>
-    /* Ana Arka Plan */
-    .stApp { background: linear-gradient(180deg, #2ecc71 0%, #f1c40f 100%); background-attachment: fixed; }
-    
-    /* Kategori Kartları (image_ad99bc.jpg'deki gibi) */
-    .category-card {
-        background: #FF6B6B; color: white; padding: 20px; border-radius: 15px;
-        margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: bold; border: 2px solid rgba(255,255,255,0.3);
-    }
-    
-    /* İstatistik Çubukları (image_ad991a.jpg'deki gibi) */
-    .stat-row { background: white; border-radius: 10px; padding: 10px; margin-bottom: 8px; border-left: 5px solid #3498db; }
-    .progress-bg { background: #eee; border-radius: 20px; height: 10px; width: 100%; margin-top: 5px; }
-    .progress-fill { background: #3498db; height: 10px; border-radius: 20px; }
-    
-    /* Soru Alanı */
-    .question-container { background: white; border-radius: 20px; padding: 25px; margin-top: 10px; color: #2c3e50; }
-    
-    /* Çizim Tahtası Alanı (image_ad99e1.jpg'deki gibi) */
-    .scratchpad { border: 2px dashed #bdc3c7; background: #fafafa; height: 100px; border-radius: 10px; text-align: center; color: #95a5a6; padding-top: 35px; }
+    .stApp { background: #f0f2f5; }
+    .main-card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .question-box { font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 20px; padding: 20px; border-left: 5px solid #4f46e5; background: #f8fafc; }
+    .stButton>button { border-radius: 12px; height: 3em; font-weight: bold; }
+    .status-text { font-size: 14px; color: #64748b; margin-bottom: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SESSION STATE (HAFIZA) ---
+# --- SESSION STATE (KESİNTİSİZ TEST İÇİN) ---
 if "page" not in st.session_state: st.session_state.page = "home"
 if "score" not in st.session_state: st.session_state.score = 0
-if "history" not in st.session_state: st.session_state.history = []
-if "active_test" not in st.session_state: st.session_state.active_test = None
+if "soru_index" not in st.session_state: st.session_state.soru_index = 0
+if "test_sorulari" not in st.session_state: st.session_state.test_sorulari = []
+if "yanlis_sayisi" not in st.session_state: st.session_state.yanlis_sayisi = 0
+if "toplam_soru_ayarı" not in st.session_state: st.session_state.toplam_soru_ayarı = 20
 
-# --- YENİ NESİL SORU BANKASI (Görsellerdeki Örnekler) ---
-def soru_getir(kategori):
-    if kategori == "Matematik":
-        # Abaküs/Ondalık Gösterim Sorusu (image_ad99e1.jpg)
-        return {
-            "s": "Abaküste binler basamağında 3, ondalık kısımda binde birler basamağında 8 boncuk varsa bu sayı hangisidir?",
-            "c": "300,008", "siklar": ["300,008", "30,1518", "301,418", "815,103"],
-            "analiz": "Basamak tablosuna yerleştir: Binler(3), Yüzler(0), Onlar(0), Birler(0) , Onda1(0), Yüzde1(0), Binde1(8)."
-        }
-    elif kategori == "Fen Bilimleri":
-        # Güneş Sorusu (image_ad99fb.jpg)
-        return {
-            "s": "Suna: 'Güneş Dünya'dan büyük müdür?' \nNalan: 'Güneş sıcak gazlardan mı oluşur?' \nSoruların cevapları sırasıyla hangisidir?",
-            "c": "Evet - Evet", "siklar": ["Evet - Evet", "Hayır - Evet", "Evet - Hayır", "Hayır - Hayır"],
-            "analiz": "Güneş bir yıldızdır, Dünya'dan çok büyüktür ve hidrojen/helyum gazlarından oluşur."
-        }
-    return {"s": "Örnek Soru", "c": "Cevap", "siklar": ["Cevap", "A", "B", "C"], "analiz": "Açıklama"}
+# --- YENİ NESİL SORU ÜRETİCİ ---
+def soru_olustur(ders, zorluk):
+    # Bu fonksiyon her çağrıldığında farklı sayılarla yeni nesil soru üretir
+    a = random.randint(10, 100)
+    b = random.randint(5, 50)
+    
+    if ders == "Matematik":
+        s = f"Yusuf, tanesi {a} TL olan kalemlerden {b} tane alıyor. Kasaya 5000 TL verirse kaç TL para üstü alır?"
+        c = str(5000 - (a * b))
+        analiz = f"Önce toplam tutarı buluruz ({a}x{b}), sonra 5000'den çıkarırız."
+    elif ders == "Fen Bilimleri":
+        s = "Dünya, Güneş ve Ay'ın büyüklüklerini birer meyveye benzetecek olursak; Güneş, Dünya ve Ay sırasıyla hangisi olabilir?"
+        c = "Karpuz - Nohut - Mercimek"
+        analiz = "Güneş en büyük, Ay ise en küçüktür."
+    else:
+        s = "Aşağıdaki cümlelerin hangisinde 'de' bağlacı yanlış yazılmıştır?"
+        c = "Yusuf'da bizimle gelecek."
+        analiz = "Bağlaç olan 'da' ayrı yazılır."
 
-# --- ANA SAYFA (image_ad99a2.jpg ve image_ad99bc.jpg karışımı) ---
+    siklar = [c, str(int(c)+10) if c.replace('-','').isdigit() else "Yanlış Şık 1", 
+              str(int(c)-5) if c.replace('-','').isdigit() else "Yanlış Şık 2", "Bilmiyorum"]
+    random.sample(siklar, len(siklar)) # Karıştır
+    return {"s": s, "c": c, "siklar": siklar, "analiz": analiz, "ders": ders}
+
+# --- EKRANLAR ---
+
+# 1. ANA SAYFA
 if st.session_state.page == "home":
-    st.markdown("<h2 style='text-align:center; color:white;'>🏠 Yusuf'un Akademisi</h2>", unsafe_allow_html=True)
+    st.title("🛡️ Yusuf AI Akademisi")
+    st.markdown("<div class='main-card'>", unsafe_allow_html=True)
     
-    # İstatistik Özeti
-    st.markdown(f"<div style='text-align:center; color:white; font-size:20px;'>⭐ Toplam Puan: {st.session_state.score}</div>", unsafe_allow_html=True)
+    st.subheader("Test Ayarlarını Yap")
+    secilen_ders = st.selectbox("Ders Seç", ["Matematik", "Fen Bilimleri", "Türkçe"])
+    soru_sayisi = st.slider("Soru Sayısı Seç (1-100)", 1, 100, 20)
+    st.session_state.toplam_soru_ayarı = soru_sayisi
     
-    # Ders Kategorileri
-    dersler = [("🧮 Matematik", "#FF6B6B"), ("📚 Türkçe", "#4D96FF"), ("🧪 Fen Bilimleri", "#6BCB77"), ("🌍 Sosyal Bilgiler", "#FFD93D")]
-    
-    for ders, renk in dersler:
-        if st.button(ders, use_container_width=True):
-            st.session_state.active_test = ders.split(" ")[1]
-            st.session_state.current_q = soru_getir(st.session_state.active_test)
-            st.session_state.page = "test"
-            st.rerun()
+    if st.button("Sınavı Başlat 🚀"):
+        # Seçilen sayı kadar soru üret ve hafızaya al
+        st.session_state.test_sorulari = [soru_olustur(secilen_ders, "Orta") for _ in range(soru_sayisi)]
+        st.session_state.soru_index = 0
+        st.session_state.yanlis_sayisi = 0
+        st.session_state.page = "quiz"
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    if col1.button("📊 Başarı Durumu"): st.session_state.page = "stats"
-    if col2.button("⚙️ Ayarlar"): st.toast("Ayarlar yakında!")
-
-# --- TEST SAYFASI (image_ad99dc.jpg ve image_ad99e1.jpg karışımı) ---
-elif st.session_state.page == "test":
-    q = st.session_state.current_q
-    st.markdown(f"<h3 style='text-align:center; color:white;'>{st.session_state.active_test} Testi</h3>", unsafe_allow_html=True)
+# 2. TEST EKRANI (KESİNTİSİZ)
+elif st.session_state.page == "quiz":
+    idx = st.session_state.soru_index
+    toplam = len(st.session_state.test_sorulari)
     
-    st.markdown(f"""
-        <div class='question-container'>
-            <p style='color:#7f8c8d; font-size:12px;'>Soru 1 / 1</p>
-            <p style='font-size:18px; font-weight:bold;'>{q['s']}</p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Karalama Tahtası Simülasyonu
-    st.markdown("<div class='scratchpad'>✏️ Buraya işlem yapabilirsin (Zihinden veya kağıda)</div>", unsafe_allow_html=True)
-    
-    # Şıklar (image_ad99fb.jpg tarzı yüzdeli/renkli yapı)
-    for sik in q['siklar']:
-        if st.button(sik, use_container_width=True):
-            if sik == q['c']:
-                st.success("🎉 Harika! Doğru Cevap.")
-                st.session_state.score += 20
-                st.session_state.history.append({"ders": st.session_state.active_test, "durum": "Doğru"})
-            else:
-                st.error("Hatalı oldu, ama üzülme!")
-                st.info(f"💡 Çözüm: {q['analiz']}")
-                st.session_state.history.append({"ders": st.session_state.active_test, "durum": "Yanlış"})
-            
-            time.sleep(2)
-            st.session_state.page = "home"
-            st.rerun()
-
-    if st.button("⬅️ Testi Bitir"): st.session_state.page = "home"; st.rerun()
-
-# --- İSTATİSTİK SAYFASI (image_ad991a.jpg tarzı) ---
-elif st.session_state.page == "stats":
-    st.markdown("<h2 style='text-align:center; color:white;'>📊 Ders Başarı Durumu</h2>", unsafe_allow_html=True)
-    
-    stats_data = [
-        ("Matematik", 85), ("Türkçe", 60), ("Fen Bilimleri", 75), ("Sosyal Bilgiler", 90)
-    ]
-    
-    for ders, yuzde in stats_data:
-        st.markdown(f"""
-            <div class='stat-row'>
-                <b>{ders}</b> - %{yuzde} Başarı
-                <div class='progress-bg'><div class='progress-fill' style='width:{yuzde}%;'></div></div>
-            </div>
-        """, unsafe_allow_html=True)
+    if idx < toplam:
+        soru = st.session_state.test_sorulari[idx]
         
-    if st.button("🏠 Ana Sayfaya Dön"): st.session_state.page = "home"; st.rerun()
+        st.markdown(f"<p class='status-text'>Soru {idx + 1} / {toplam}</p>", unsafe_allow_html=True)
+        st.progress((idx + 1) / toplam)
+        
+        st.markdown(f"<div class='question-box'>{soru['s']}</div>", unsafe_allow_html=True)
+        
+        # Şıklar
+        cevap = st.radio("Cevabını İşaretle:", soru['siklar'], index=None)
+        
+        st.divider()
+        col1, col2 = st.columns(2)
+        
+        if col1.button("Sonraki Soru ➡️"):
+            if cevap:
+                if cevap == soru['c']:
+                    st.session_state.score += 10
+                    st.toast("Doğru! 🎉")
+                else:
+                    st.session_state.yanlis_sayisi += 1
+                    st.error(f"Yanlış! Doğru cevap: {soru['c']}")
+                    st.info(f"📌 Çözüm: {soru['analiz']}")
+                    time.sleep(2) # Yanlışı görmesi için kısa bekleme
+                
+                st.session_state.soru_index += 1
+                st.rerun()
+            else:
+                st.warning("Lütfen bir şık seç!")
+        
+        if col2.button("Testi Bitir 🏳️"):
+            st.session_state.soru_index = toplam
+            st.rerun()
+
+    else:
+        st.session_state.page = "result"
+        st.rerun()
+
+# 3. SONUÇ EKRANI
+elif st.session_state.page == "result":
+    st.balloons()
+    st.title("🏁 Sınav Sonucu")
+    st.markdown("<div class='main-card' style='text-align:center;'>", unsafe_allow_html=True)
+    
+    dogru = st.session_state.toplam_soru_ayarı - st.session_state.yanlis_sayisi
+    st.header(f"Skor: {dogru} Doğru / {st.session_state.yanlis_sayisi} Yanlış")
+    st.metric("Kazanılan Toplam Puan", st.session_state.score)
+    
+    if st.button("Yeni Sınava Gir 🔄"):
+        st.session_state.page = "home"
+        st.session_state.score = 0
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)

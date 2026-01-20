@@ -1,120 +1,132 @@
 import streamlit as st
 import random
 
-# =========================
+# --------------------
 # SAYFA AYARI
-# =========================
+# --------------------
 st.set_page_config(
     page_title="Evde Matematik Asistanı",
     page_icon="🧮",
     layout="centered"
 )
 
-# =========================
-# BAŞLIK
-# =========================
-st.markdown(
-    """
-    <h1 style='text-align:center;'>🧮 Evde Matematik Asistanı</h1>
-    <p style='text-align:center;'>Çocuklar için eğlenceli matematik</p>
-    """,
-    unsafe_allow_html=True
-)
-
-# =========================
-# SEVİYE SEÇİMİ
-# =========================
-seviye = st.selectbox(
-    "📘 Seviye Seç",
-    ["1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf"]
-)
-
-# =========================
-# SORU OLUŞTURMA
-# =========================
-def soru_uret(seviye):
-    if seviye == "1. Sınıf":
-        a = random.randint(1, 10)
-        b = random.randint(1, 10)
-        return f"{a} + {b}", a + b
-
-    if seviye == "2. Sınıf":
-        a = random.randint(10, 50)
-        b = random.randint(1, 20)
-        return f"{a} - {b}", a - b
-
-    if seviye == "3. Sınıf":
-        a = random.randint(2, 10)
-        b = random.randint(2, 10)
-        return f"{a} × {b}", a * b
-
-    if seviye == "4. Sınıf":
-        b = random.randint(2, 10)
-        c = random.randint(2, 10)
-        a = b * c
-        return f"{a} ÷ {b}", c
-
-
-# =========================
+# --------------------
 # SESSION STATE
-# =========================
-if "soru" not in st.session_state:
-    st.session_state.soru, st.session_state.cevap = soru_uret(seviye)
-    st.session_state.puan = 0
+# --------------------
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
-# =========================
-# SORU GÖSTER
-# =========================
-st.markdown(
-    f"<h2 style='text-align:center;'>❓ {st.session_state.soru}</h2>",
-    unsafe_allow_html=True
-)
+if "score" not in st.session_state:
+    st.session_state.score = 0
 
-# =========================
-# CEVAP AL
-# =========================
-kullanici_cevap = st.number_input(
-    "Cevabını yaz",
-    step=1,
-    format="%d"
-)
+if "question" not in st.session_state:
+    st.session_state.question = None
+    st.session_state.answer = None
 
-# =========================
-# KONTROL BUTONU
-# =========================
-if st.button("✅ Kontrol Et"):
-    if kullanici_cevap == st.session_state.cevap:
-        st.success("🎉 Tebrikler! Doğru cevap")
-        st.session_state.puan += 10
+# --------------------
+# STİL
+# --------------------
+st.markdown("""
+<style>
+body {
+    background-color: #f4f6fb;
+}
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    cursor: pointer;
+}
+.card:hover {
+    background: #eef2ff;
+}
+.big {
+    font-size: 22px;
+    font-weight: bold;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# --------------------
+# FONKSİYONLAR
+# --------------------
+def new_question(level):
+    if level == "4. Sınıf":
+        a = random.randint(1, 20)
+        b = random.randint(1, 20)
     else:
-        st.error(f"❌ Yanlış. Doğru cevap: {st.session_state.cevap}")
+        a = random.randint(10, 50)
+        b = random.randint(10, 50)
 
-    st.session_state.soru, st.session_state.cevap = soru_uret(seviye)
+    st.session_state.question = f"{a} + {b}"
+    st.session_state.answer = a + b
 
-# =========================
-# PUAN
-# =========================
-st.markdown(
-    f"<h3 style='text-align:center;'>⭐ Puan: {st.session_state.puan}</h3>",
-    unsafe_allow_html=True
-)
+# --------------------
+# ANA SAYFA
+# --------------------
+if st.session_state.page == "home":
+    st.title("🧮 Evde Matematik Asistanı")
+    st.caption("Çocuklar için eğlenceli ve güvenli matematik")
 
-# =========================
-# YENİDEN BAŞLAT
-# =========================
-if st.button("🔄 Yeniden Başlat"):
-    st.session_state.clear()
-    st.experimental_rerun()
+    col1, col2, col3 = st.columns(3)
 
-# =========================
-# ALT BİLGİ
-# =========================
-st.markdown(
-    """
-    <hr>
-    <p style='text-align:center; font-size:13px;'>
-    Evde çocuklar için güvenli matematik uygulaması
-    </p>
-    """,
-    unsafe_allow_html=True
-)
+    with col1:
+        if st.button("📋 Testler"):
+            st.session_state.page = "test"
+
+    with col2:
+        if st.button("🎲 Rastgele Mod"):
+            st.session_state.page = "test"
+
+    with col3:
+        if st.button("📊 İstatistik"):
+            st.session_state.page = "stats"
+
+    st.markdown("---")
+    st.info("Reklamsız – güvenli – ev ortamına uygun")
+
+# --------------------
+# TEST SAYFASI
+# --------------------
+elif st.session_state.page == "test":
+    st.title("📝 Matematik Testi")
+
+    level = st.selectbox("Seviye Seç", ["4. Sınıf", "5. Sınıf"])
+
+    if st.session_state.question is None:
+        new_question(level)
+
+    st.subheader(f"❓ {st.session_state.question}")
+
+    user_answer = st.number_input("Cevabını yaz", step=1)
+
+    if st.button("✅ Kontrol Et"):
+        if user_answer == st.session_state.answer:
+            st.success("🎉 Doğru!")
+            st.session_state.score += 10
+        else:
+            st.error(f"❌ Yanlış! Doğru cevap: {st.session_state.answer}")
+
+        st.session_state.question = None
+
+    st.markdown(f"⭐ **Puan:** {st.session_state.score}")
+
+    if st.button("🔄 Yeniden Başlat"):
+        st.session_state.score = 0
+        st.session_state.question = None
+
+    if st.button("⬅️ Ana Sayfa"):
+        st.session_state.page = "home"
+
+# --------------------
+# İSTATİSTİK
+# --------------------
+elif st.session_state.page == "stats":
+    st.title("📊 İstatistikler")
+
+    st.metric("Toplam Puan", st.session_state.score)
+
+    if st.button("⬅️ Ana Sayfa"):
+        st.session_state.page = "home"

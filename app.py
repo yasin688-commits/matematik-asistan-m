@@ -3,122 +3,92 @@ import random
 import math
 
 # Sayfa Yapılandırması
-st.set_page_config(page_title="Yusuf Agaç - Yeni Nesil Test", page_icon="📝", layout="wide")
+st.set_page_config(page_title="Yusuf Agaç - Görsel Asistan", page_icon="🎨", layout="wide")
 
-# --- HAFIZA VE SİSTEM YÖNETİMİ ---
-if 'cozulen_sorular' not in st.session_state:
-    st.session_state.cozulen_sorular = []
-if 'puan' not in st.session_state:
-    st.session_state.puan = 0
-if 'aktif_soru_obj' not in st.session_state:
-    st.session_state.aktif_soru_obj = None
+# --- SİSTEM HAFIZASI ---
+if 'cozulen_sorular' not in st.session_state: st.session_state.cozulen_sorular = []
+if 'puan' not in st.session_state: st.session_state.puan = 0
+if 'aktif_soru_obj' not in st.session_state: st.session_state.aktif_soru_obj = None
 
-# --- YENİ NESİL SORU BANKASI (Yapay Zeka Mantığıyla Hazırlanmış) ---
-# Buradaki her soru birer nesne gibi yapılandırılmıştır.
+# --- GÖRSEL ÇÖZÜM ÜRETİCİ (SVG) ---
+def cozum_gorseli_ureti(tip, veri):
+    if tip == "Saat":
+        return f"""
+        <svg width="150" height="150" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" stroke="black" stroke-width="2" fill="white" />
+            <line x1="50" y1="50" x2="50" y2="15" stroke="black" stroke-width="3" /> <line x1="50" y1="50" x2="80" y2="50" stroke="red" stroke-width="3" /> <path d="M 50 40 A 10 10 0 0 1 60 50" fill="none" stroke="orange" stroke-width="2" />
+        </svg>"""
+    elif tip == "DogruAci":
+        return f"""
+        <svg width="200" height="100" viewBox="0 0 200 100">
+            <line x1="10" y1="80" x2="190" y2="80" stroke="black" stroke-width="3" />
+            <line x1="100" y1="80" x2="40" y2="20" stroke="red" stroke-width="2" stroke-dasharray="4" />
+            <line x1="100" y1="80" x2="160" y2="20" stroke="red" stroke-width="2" stroke-dasharray="4" />
+            <text x="80" y="95" font-size="10">180° / 3 = 60°</text>
+        </svg>"""
+    return ""
+
+# --- YENİ NESİL SORU BANKASI ---
 soru_bankasi = [
     {
-        "id": 1,
-        "tip": "Açı",
-        "derece": 45,
-        "soru": "Bir açının ölçüsü, dik açının tam yarısına eşittir. Bu açı kaç derecedir?",
-        "siklar": ["30", "45", "60", "90"],
-        "cevap": "45",
-        "analiz": "Dik açı 90 derecedir. Yarısı 90 / 2 = 45 eder."
+        "id": 1, "tip": "Açı", "derece": 45,
+        "soru": "Dik açının (90°) tam yarısı olan bir açı çizmek istiyoruz. Bu açı kaç derecedir?",
+        "siklar": ["30", "45", "60", "90"], "cevap": "45",
+        "analiz": "Bak Yusuf; 90'ı tam ortadan böldüğümüzde iki tane 45 elde ederiz.",
+        "gorsel_tip": "AciBolme"
     },
     {
-        "id": 2,
-        "tip": "Mantık",
-        "soru": "Yusuf, elindeki 180 derecelik doğru açıyı 3 eşit parçaya bölüyor. Her bir parçanın açı türü ne olur?",
-        "siklar": ["Geniş Açı", "Dik Açı", "Dar Açı", "Doğru Açı"],
-        "cevap": "Dar Açı",
-        "analiz": "180 / 3 = 60 derecedir. 60 derece 90'dan küçük olduğu için Dar Açı'dır."
+        "id": 2, "tip": "Saat",
+        "soru": "Saat tam 15:00'i gösterdiğinde akrep ile yelkovan arasındaki açı nedir?",
+        "siklar": ["Dar", "Dik", "Geniş", "Doğru"], "cevap": "Dik",
+        "analiz": "Saat 3'te yelkovan tam tepede (12), akrep ise tam yandadır (3). Bu bir L şekli yani dik açıdır.",
+        "gorsel_tip": "Saat"
     },
     {
-        "id": 3,
-        "tip": "Açı",
-        "derece": 120,
-        "soru": "Görseldeki açıya kaç derece daha eklenirse bir 'Doğru Açı' (180°) elde edilir?",
-        "siklar": ["40", "50", "60", "80"],
-        "cevap": "60",
-        "analiz": "Doğru açı 180 derecedir. 180 - 120 = 60 derece eklenmelidir."
-    },
-    {
-        "id": 4,
-        "tip": "Mantık",
-        "soru": "Bir saatte akrep ile yelkovan tam saat 15:00'i gösterirken aralarındaki açı kaç derecedir?",
-        "siklar": ["45", "90", "120", "180"],
-        "cevap": "90",
-        "analiz": "Saat 3'te akrep 3'ü, yelkovan 12'yi gösterir. Bu bir dik açıdır (90°)."
+        "id": 3, "tip": "DoğruAci",
+        "soru": "Bir doğru açı (180°) 3 eş parçaya bölünürse her bir parçanın derecesi kaç olur?",
+        "siklar": ["45", "60", "90", "120"], "cevap": "60",
+        "analiz": "180 derecelik bir pastayı 3 kişiye eşit paylaştırırsan herkese 60 derece düşer.",
+        "gorsel_tip": "DogruAci"
     }
 ]
 
-# --- YARDIMCI FONKSİYONLAR ---
-def aci_ciz_modern(derece):
-    rad = math.radians(derece)
-    x = 150 + 80 * math.cos(-rad)
-    y = 150 + 80 * math.sin(-rad)
-    return f"""
-    <svg width="300" height="200" viewBox="0 0 300 200" style="background:#fff; border-radius:15px; border:1px solid #ddd;">
-        <line x1="150" y1="150" x2="250" y2="150" style="stroke:#333; stroke-width:4" />
-        <line x1="150" y1="150" x2="{x}" y2="{y}" style="stroke:red; stroke-width:5" />
-        <path d="M 170 150 A 20 20 0 0 0 {150+20*math.cos(-rad)} {150+20*math.sin(-rad)}" fill="none" stroke="orange" stroke-width="2"/>
-    </svg>"""
-
 def yeni_soru_sec():
     kalanlar = [s for s in soru_bankasi if s['id'] not in st.session_state.cozulen_sorular]
-    if kalanlar:
-        st.session_state.aktif_soru_obj = random.choice(kalanlar)
-    else:
-        st.session_state.aktif_soru_obj = "BITTI"
+    st.session_state.aktif_soru_obj = random.choice(kalanlar) if kalanlar else "BITTI"
 
 # --- ARAYÜZ ---
-st.title("🚀 Yusuf Agaç: Yeni Nesil Matematik Testi")
+st.title("👨‍🏫 Yusuf Agaç: Görsel Asistanlı Test")
 
-if st.session_state.aktif_soru_obj is None:
-    yeni_soru_sec()
+if st.session_state.aktif_soru_obj is None: yeni_soru_sec()
 
 if st.session_state.aktif_soru_obj == "BITTI":
     st.balloons()
-    st.success("Tebrikler Yusuf! Tüm soruları bitirdin. 🏆")
-    if st.button("Testi Sıfırla"):
-        st.session_state.cozulen_sorular = []
-        yeni_soru_sec()
-        st.rerun()
+    st.success("Tüm sorular bitti! Yusuf sen bir harikasın! 🏆")
+    if st.button("Tekrar Başla"):
+        st.session_state.cozulen_sorular = []; st.session_state.puan = 0; yeni_soru_sec(); st.rerun()
 else:
-    soru = st.session_state.aktif_soru_obj
+    s = st.session_state.aktif_soru_obj
+    st.sidebar.metric("Puan", st.session_state.puan)
     
-    # Soru Alanı
-    st.info(f"📍 Konu: {soru['tip']}")
-    
-    col1, col2 = st.columns([1, 1.2])
-    
+    col1, col2 = st.columns([1, 1])
     with col1:
-        if soru['tip'] == "Açı" and 'derece' in soru:
-            st.markdown(aci_ciz_modern(soru['derece']), unsafe_allow_html=True)
-            st.write(f"*(Görseldeki açı {soru['derece']} derecedir)*")
-        else:
-            st.image("https://img.icons8.com/clouds/200/brainstorming.png", width=150)
-
-    with col2:
-        st.subheader(soru['soru'])
-        secim = st.radio("Cevabını Seç Yusuf:", soru['siklar'], key=f"radio_{soru['id']}")
+        st.subheader("Soru")
+        st.write(s['soru'])
+        secim = st.radio("Cevabın:", s['siklar'], key=f"r_{s['id']}")
         
-        if st.button("Cevabı Onayla"):
-            if secim == soru['cevap']:
-                st.success("DOĞRU! Harikasın Yusuf. 🎉")
-                st.session_state.puan += 10
-            else:
-                st.error(f"Yanlış Cevap! Doğru cevap: {soru['cevap']}")
-                with st.expander("📚 Asistan Çözümü Gör"):
-                    st.write(soru['analiz'])
-            
-            st.session_state.cozulen_sorular.append(soru['id'])
-            time_wait = st.empty()
-            st.button("Sonraki Soruya Geç ➡️", on_click=yeni_soru_sec)
-
-# Sol Panel (Skor)
-with st.sidebar:
-    st.header("🏆 Yusuf'un Başarısı")
-    st.write(f"Toplam Puan: **{st.session_state.puan}**")
-    st.write(f"Çözülen Soru: **{len(st.session_state.cozulen_sorular)} / {len(soru_bankasi)}**")
-    st.progress(len(st.session_state.cozulen_sorular) / len(soru_bankasi))
+    if st.button("Cevabı Gönder"):
+        if secim == s['cevap']:
+            st.success("DOĞRU! 🌟")
+            st.session_state.puan += 10
+            st.session_state.cozulen_sorular.append(s['id'])
+            st.button("Sıradaki Soru ➡️", on_click=yeni_soru_sec)
+        else:
+            st.error("Hatalı oldu, ama üzülme! İşte asistanın görsel çözümü:")
+            st.markdown(f"""
+            <div style="background:#e3f2fd; padding:20px; border-radius:15px;">
+                <h4>🤖 Çözüm Şeması</h4>
+                <p>{s['analiz']}</p>
+                {cozum_gorseli_ureti(s['gorsel_tip'], None)}
+            </div>
+            """, unsafe_allow_html=True)

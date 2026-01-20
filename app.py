@@ -1,7 +1,9 @@
 import random
+import io
 from datetime import datetime
 
 import streamlit as st
+from PIL import Image, ImageDraw, ImageFont
 
 # --------------------
 # SAYFA AYARI
@@ -137,10 +139,123 @@ if "question_data" not in st.session_state:
 if "history" not in st.session_state:
     st.session_state.history = []
 
+if "subject_stats" not in st.session_state:
+    # subject -> {"total": int, "correct": int}
+    st.session_state.subject_stats = {}
+
 
 # --------------------
 # SORU ÜRETİCİLER
 # --------------------
+def _font(size: int = 18) -> ImageFont.ImageFont:
+    try:
+        return ImageFont.truetype("arial.ttf", size=size)
+    except Exception:
+        return ImageFont.load_default()
+
+
+def _img_bytes(img: Image.Image) -> bytes:
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _card_image(title: str, lines: list[str], w: int = 900, h: int = 420) -> bytes:
+    img = Image.new("RGB", (w, h), (250, 252, 255))
+    draw = ImageDraw.Draw(img)
+
+    # header bar
+    draw.rounded_rectangle([20, 20, w - 20, 88], radius=18, fill=(233, 243, 255), outline=(210, 225, 245))
+    draw.text((40, 38), title, fill=(15, 23, 42), font=_font(22))
+
+    # body card
+    draw.rounded_rectangle([20, 110, w - 20, h - 20], radius=18, fill=(255, 255, 255), outline=(220, 230, 242))
+
+    y = 140
+    for line in lines:
+        draw.text((40, y), line, fill=(17, 24, 39), font=_font(18))
+        y += 32
+
+    return _img_bytes(img)
+
+
+def _bar_chart_image(labels: list[str], values: list[int], title: str) -> bytes:
+    w, h = 900, 420
+    img = Image.new("RGB", (w, h), (250, 252, 255))
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle([20, 20, w - 20, h - 20], radius=18, fill=(255, 255, 255), outline=(220, 230, 242))
+    draw.text((40, 32), title, fill=(15, 23, 42), font=_font(22))
+
+    max_v = max(values) if values else 1
+    chart_left, chart_top, chart_right, chart_bottom = 60, 90, w - 60, h - 80
+    draw.line([chart_left, chart_bottom, chart_right, chart_bottom], fill=(148, 163, 184), width=2)
+    draw.line([chart_left, chart_top, chart_left, chart_bottom], fill=(148, 163, 184), width=2)
+
+    bar_w = int((chart_right - chart_left) / max(1, len(values)) * 0.6)
+    gap = int((chart_right - chart_left) / max(1, len(values)) * 0.4)
+
+    x = chart_left + gap // 2
+    for lab, v in zip(labels, values):
+        bar_h = int((chart_bottom - chart_top) * (v / max_v))
+        x1, y1 = x, chart_bottom - bar_h
+        x2, y2 = x + bar_w, chart_bottom
+        draw.rounded_rectangle([x1, y1, x2, y2], radius=8, fill=(99, 102, 241), outline=(79, 70, 229))
+        draw.text((x1, chart_bottom + 8), lab, fill=(55, 65, 81), font=_font(16))
+        draw.text((x1, y1 - 22), str(v), fill=(55, 65, 81), font=_font(16))
+        x += bar_w + gap
+
+    return _img_bytes(img)
+
+
+def _timeline_image(events: list[tuple[str, str]], title: str) -> bytes:
+    w, h = 900, 420
+    img = Image.new("RGB", (w, h), (250, 252, 255))
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle([20, 20, w - 20, h - 20], radius=18, fill=(255, 255, 255), outline=(220, 230, 242))
+    draw.text((40, 32), title, fill=(15, 23, 42), font=_font(22))
+
+    line_y = 220
+    draw.line([80, line_y, w - 80, line_y], fill=(148, 163, 184), width=4)
+
+    n = max(1, len(events))
+    step = int((w - 160) / n)
+    x = 80 + step // 2
+    for i, (year, label) in enumerate(events):
+        draw.ellipse([x - 10, line_y - 10, x + 10, line_y + 10], fill=(16, 185, 129))
+        draw.text((x - 22, line_y - 44), year, fill=(15, 23, 42), font=_font(16))
+        draw.text((x - 80, line_y + 20), label, fill=(55, 65, 81), font=_font(16))
+        x += step
+
+    return _img_bytes(img)
+
+
+def _mini_map_image(points: dict[str, tuple[int, int]], title: str) -> bytes:
+    w, h = 900, 420
+    img = Image.new("RGB", (w, h), (250, 252, 255))
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle([20, 20, w - 20, h - 20], radius=18, fill=(255, 255, 255), outline=(220, 230, 242))
+    draw.text((40, 32), title, fill=(15, 23, 42), font=_font(22))
+
+    # map area
+    mx1, my1, mx2, my2 = 60, 90, w - 60, h - 60
+    draw.rounded_rectangle([mx1, my1, mx2, my2], radius=18, fill=(236, 253, 245), outline=(167, 243, 208))
+    # simple "sea" band
+    draw.rounded_rectangle([mx1, my2 - 70, mx2, my2], radius=18, fill=(219, 234, 254), outline=(191, 219, 254))
+    draw.text((mx1 + 16, my2 - 55), "DENİZ", fill=(30, 64, 175), font=_font(16))
+
+    for name, (x, y) in points.items():
+        px = mx1 + x
+        py = my1 + y
+        draw.ellipse([px - 10, py - 10, px + 10, py + 10], fill=(239, 68, 68))
+        draw.text((px + 14, py - 12), name, fill=(15, 23, 42), font=_font(18))
+
+    return _img_bytes(img)
+
+
+def _normalize_text(s: str) -> str:
+    return (s or "").strip().casefold()
+
+
 def generate_4th_grade_question(topic: str):
     """4. sınıf için farklı konu tiplerinde yeni nesil soru üretir."""
     if topic == "Toplama / Çıkarma":
@@ -471,6 +586,225 @@ def generate_question(level: str, topic: str):
     if level == "4. Sınıf":
         return generate_4th_grade_question(topic)
     return generate_5th_grade_question(topic)
+
+
+# --------------------
+# DERS BAZLI (GÖRSEL ODAKLI) SORULAR
+# --------------------
+def generate_turkce_question(level: str):
+    # Görsel: cümlede altı çizili kelime, doğru yazımı seç
+    variants = [
+        ("yanlız", "yalnız"),
+        ("herkez", "herkes"),
+        ("şöför", "şoför"),
+        ("deyil", "değil"),
+        ("fasülye", "fasulye"),
+    ]
+    wrong, correct = random.choice(variants)
+    sentence = f"Bugün {wrong} okula gitti."
+    img = _card_image(
+        "Türkçe: Yazım Yanlışı",
+        [
+            "Aşağıdaki cümlede yazım yanlışı yapılmıştır.",
+            "",
+            sentence,
+            "",
+            "Soru: Yanlış yazılan kelimenin doğru yazımı hangisidir?",
+        ],
+    )
+    choices = [correct, wrong, correct.replace("ı", "i"), correct + " "]
+    choices = list(dict.fromkeys([c.strip() for c in choices]))[:4]
+    random.shuffle(choices)
+    return {
+        "q": "Görseldeki cümlede yanlış yazılan kelimenin doğru yazımı hangisidir?",
+        "type": "choice",
+        "choices": choices,
+        "a": correct,
+        "explanation": f"Doğru yazım: **{correct}**",
+        "difficulty": 2,
+        "image": img,
+        "subject": "Türkçe",
+        "topic": "Yazım Kuralları",
+        "level": level,
+    }
+
+
+def generate_fen_question(level: str):
+    # Görsel: besin zinciri şeması -> eksik halkayı seç
+    chain = [
+        ("Bitki", "Çekirge", "Kurbağa", "Yılan"),
+        ("Ot", "Tavşan", "Tilki", "Kartal"),
+    ]
+    a, b, c, d = random.choice(chain)
+    missing = random.choice([b, c])
+    shown = [a, "____", c, d] if missing == b else [a, b, "____", d]
+    img = _card_image(
+        "Fen Bilimleri: Besin Zinciri",
+        [
+            "Aşağıdaki besin zincirinde bir canlı eksiktir.",
+            "",
+            "  →  ".join(shown),
+            "",
+            "Soru: Boş bırakılan yere hangisi gelmelidir?",
+        ],
+    )
+    choices = [b, c, d, a]
+    choices = list(dict.fromkeys(choices))
+    random.shuffle(choices)
+    return {
+        "q": "Besin zincirinde boş bırakılan yere hangisi gelmelidir?",
+        "type": "choice",
+        "choices": choices,
+        "a": missing,
+        "explanation": f"Doğru zincir: {a} → {b} → {c} → {d}",
+        "difficulty": 2,
+        "image": img,
+        "subject": "Fen Bilimleri",
+        "topic": "Besin Zinciri",
+        "level": level,
+    }
+
+
+def generate_sosyal_question(level: str):
+    # Görsel: sütun grafiği (nüfus/üretim vb.) -> en büyük / fark
+    cities = ["A", "B", "C", "D"]
+    values = [random.randint(20, 80) for _ in cities]
+    img = _bar_chart_image(cities, values, "Sosyal: Sütun Grafiği (Örnek Veri)")
+    idx = values.index(max(values))
+    answer = cities[idx]
+    return {
+        "q": "Grafiğe göre değeri en yüksek olan şehir hangisidir?",
+        "type": "choice",
+        "choices": cities,
+        "a": answer,
+        "explanation": f"En yüksek değer {max(values)} ile **{answer}** şehrindedir.",
+        "difficulty": 2,
+        "image": img,
+        "subject": "Sosyal Bilgiler",
+        "topic": "Grafik Okuma",
+        "level": level,
+    }
+
+
+def generate_english_question(level: str):
+    # Görsel: kelime kartı (renk/nesne) -> doğru İngilizce kelimeyi seç
+    items = [
+        ("apple", "Elma"),
+        ("book", "Kitap"),
+        ("chair", "Sandalye"),
+        ("water", "Su"),
+        ("school", "Okul"),
+    ]
+    en, tr = random.choice(items)
+    img = _card_image(
+        "English: Word Card",
+        [
+            "Look at the card and choose the correct meaning.",
+            "",
+            f"WORD: {en.upper()}",
+            "",
+            "Question: What is the Turkish meaning?",
+        ],
+    )
+    distractors = [t for _, t in items if t != tr]
+    choices = random.sample(distractors, k=3) + [tr]
+    random.shuffle(choices)
+    return {
+        "q": f"'{en}' kelimesinin Türkçe anlamı hangisidir?",
+        "type": "choice",
+        "choices": choices,
+        "a": tr,
+        "explanation": f"'{en}' = **{tr}**",
+        "difficulty": 1,
+        "image": img,
+        "subject": "İngilizce",
+        "topic": "Kelime",
+        "level": level,
+    }
+
+
+def generate_tarih_question(level: str):
+    # Görsel: zaman çizgisi -> sıralama / hangisi önce
+    events = [
+        ("1920", "TBMM"),
+        ("1923", "Cumhuriyet"),
+        ("1938", "Atatürk"),
+        ("1919", "Samsun"),
+    ]
+    chosen = random.sample(events, k=3)
+    # sort by year for timeline
+    chosen_sorted = sorted(chosen, key=lambda x: int(x[0]))
+    img = _timeline_image(chosen_sorted, "Tarih: Zaman Çizgisi (Örnek)")
+    # ask earliest event
+    answer = chosen_sorted[0][1]
+    choices = [e[1] for e in chosen_sorted]
+    random.shuffle(choices)
+    return {
+        "q": "Zaman çizgisine göre en önce gerçekleşen olay hangisidir?",
+        "type": "choice",
+        "choices": choices,
+        "a": answer,
+        "explanation": f"En erken yıl {chosen_sorted[0][0]} olduğundan cevap **{answer}**.",
+        "difficulty": 2,
+        "image": img,
+        "subject": "Tarih",
+        "topic": "Zaman Çizgisi",
+        "level": level,
+    }
+
+
+def generate_cografya_question(level: str):
+    # Görsel: mini harita -> yön bulma
+    points = {
+        "K": (180, 80),   # Kuzey
+        "G": (220, 220),  # Güney
+        "D": (520, 150),  # Doğu
+        "B": (80, 160),   # Batı
+    }
+    # choose two points, ask relative direction
+    names = list(points.keys())
+    src, dst = random.sample(names, k=2)
+    img = _mini_map_image({src: points[src], dst: points[dst]}, "Coğrafya: Yön Bulma (Mini Harita)")
+
+    dx = points[dst][0] - points[src][0]
+    dy = points[dst][1] - points[src][1]
+    horiz = "doğusunda" if dx > 0 else "batısında"
+    vert = "güneyinde" if dy > 0 else "kuzeyinde"
+    # pick dominant direction for simple question
+    answer = horiz if abs(dx) >= abs(dy) else vert
+    choices = ["kuzeyinde", "güneyinde", "doğusunda", "batısında"]
+    return {
+        "q": f"Haritaya göre **{dst}**, **{src}** noktasının daha çok hangisindedir?",
+        "type": "choice",
+        "choices": choices,
+        "a": answer,
+        "explanation": f"Konuma göre **{dst}**, **{src}** noktasının {answer}.",
+        "difficulty": 2,
+        "image": img,
+        "subject": "Coğrafya",
+        "topic": "Yönler",
+        "level": level,
+    }
+
+
+def generate_subject_question(subject: str, level: str):
+    if subject == "Matematik":
+        # Matematik mevcut üreticiyi kullanıyor (görselsiz/karışık). İleride görselleştirilebilir.
+        # Bu fonksiyon matematiği çağıran yerde topic ile üretilecek.
+        raise ValueError("Matematik için topic gerekli.")
+    if subject == "Türkçe":
+        return generate_turkce_question(level)
+    if subject == "Fen Bilimleri":
+        return generate_fen_question(level)
+    if subject == "Sosyal Bilgiler":
+        return generate_sosyal_question(level)
+    if subject == "İngilizce":
+        return generate_english_question(level)
+    if subject == "Tarih":
+        return generate_tarih_question(level)
+    if subject == "Coğrafya":
+        return generate_cografya_question(level)
+    return generate_turkce_question(level)
 
 
 # --------------------

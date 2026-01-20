@@ -814,17 +814,24 @@ def reset_question():
     st.session_state.question_data = None
 
 
-def record_result(correct: bool, user_answer, correct_answer, level, topic, difficulty):
+def record_result(correct: bool, user_answer, correct_answer, level, subject, topic, difficulty):
     st.session_state.total_questions += 1
     if correct:
         st.session_state.correct_answers += 1
         st.session_state.score += 10 * difficulty
+
+    if subject not in st.session_state.subject_stats:
+        st.session_state.subject_stats[subject] = {"total": 0, "correct": 0}
+    st.session_state.subject_stats[subject]["total"] += 1
+    if correct:
+        st.session_state.subject_stats[subject]["correct"] += 1
 
     st.session_state.history.insert(
         0,
         {
             "time": datetime.now().strftime("%H:%M"),
             "level": level,
+            "subject": subject,
             "topic": topic,
             "difficulty": difficulty,
             "user_answer": user_answer,
@@ -880,6 +887,23 @@ def render_sidebar():
 
         st.markdown("---")
 
+        st.markdown("### 📚 Ders Seçimi")
+        subject = st.selectbox(
+            "Ders",
+            options=[
+                "Matematik",
+                "Türkçe",
+                "Fen Bilimleri",
+                "Sosyal Bilgiler",
+                "İngilizce",
+                "Tarih",
+                "Coğrafya",
+            ],
+            index=0,
+        )
+
+        st.markdown("---")
+
         st.markdown("### 🧩 Öğrenme Seviyesi")
         level = st.selectbox(
             "Sınıf düzeyi",
@@ -887,24 +911,28 @@ def render_sidebar():
             index=0,
         )
 
-        if level == "4. Sınıf":
-            topic = st.selectbox(
-                "Konu",
-                options=[
-                    "Toplama / Çıkarma",
-                    "Çarpma / Bölme",
-                    "Problem Çözme",
-                ],
-            )
+        topic = None
+        if subject == "Matematik":
+            if level == "4. Sınıf":
+                topic = st.selectbox(
+                    "Konu",
+                    options=[
+                        "Toplama / Çıkarma",
+                        "Çarpma / Bölme",
+                        "Problem Çözme",
+                    ],
+                )
+            else:
+                topic = st.selectbox(
+                    "Konu",
+                    options=[
+                        "Doğal Sayılar / İşlemler",
+                        "Oran / Orantı",
+                        "Geometri (Çevre / Alan)",
+                    ],
+                )
         else:
-            topic = st.selectbox(
-                "Konu",
-                options=[
-                    "Doğal Sayılar / İşlemler",
-                    "Oran / Orantı",
-                    "Geometri (Çevre / Alan)",
-                ],
-            )
+            st.caption("Bu derste sorular **görsel odaklı** ve genelde **çoktan seçmeli** gelir.")
 
         st.markdown("---")
 
@@ -922,9 +950,10 @@ def render_sidebar():
             st.session_state.total_questions = 0
             st.session_state.correct_answers = 0
             st.session_state.history = []
+            st.session_state.subject_stats = {}
             reset_question()
 
-        return level, topic
+        return subject, level, topic
 
 
 # --------------------
@@ -1002,21 +1031,27 @@ def render_home():
 # --------------------
 # SAYFA: TEST MODU
 # --------------------
-def render_test(level: str, topic: str):
+def render_test(subject: str, level: str, topic: str | None):
     render_header()
 
     st.markdown("### 📝 Yeni Nesil Soru")
 
     if st.session_state.question_data is None:
-        q, a, exp, diff = generate_question(level, topic)
-        st.session_state.question_data = {
-            "q": q,
-            "a": a,
-            "explanation": exp,
-            "difficulty": diff,
-            "level": level,
-            "topic": topic,
-        }
+        if subject == "Matematik":
+            q, a, exp, diff = generate_question(level, topic or "Toplama / Çıkarma")
+            st.session_state.question_data = {
+                "q": q,
+                "a": a,
+                "explanation": exp,
+                "difficulty": diff,
+                "level": level,
+                "topic": topic or "Toplama / Çıkarma",
+                "subject": "Matematik",
+                "type": "number",
+                "image": None,
+            }
+        else:
+            st.session_state.question_data = generate_subject_question(subject, level)
 
     qdata = st.session_state.question_data
 
@@ -1028,7 +1063,7 @@ def render_test(level: str, topic: str):
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
                 <div>
                     <div class="card-header">❓ Soru</div>
-                    <div class="card-subtitle">{qdata["level"]} · {qdata["topic"]}</div>
+                    <div class="card-subtitle">{qdata.get("subject","")} · {qdata["level"]} · {qdata["topic"]}</div>
                 </div>
                 <div>
                     {difficulty_badge(qdata["difficulty"])}
@@ -1045,21 +1080,41 @@ def render_test(level: str, topic: str):
     answer_col, meta_col = st.columns([2, 1])
 
     with answer_col:
-        user_answer = st.number_input(
-            "Cevabını buraya yaz",
-            step=1,
-            format="%d",
-        )
+        if qdata.get("image"):
+            st.image(qdata["image"], use_container_width=True)
+
+        qtype = qdata.get("type", "number")
+        if qtype == "choice":
+            user_answer = st.radio(
+                "Seçeneğini işaretle",
+                options=qdata.get("choices", []),
+                index=None,
+                horizontal=False,
+            )
+        elif qtype == "text":
+            user_answer = st.text_input("Cevabını yaz")
+        else:
+            user_answer = st.number_input(
+                "Cevabını buraya yaz",
+                step=1,
+                format="%d",
+            )
 
         check_clicked = st.button("✅ Cevabı Kontrol Et", type="primary", use_container_width=True)
 
         if check_clicked:
-            correct = user_answer == qdata["a"]
+            if qtype == "choice":
+                correct = user_answer == qdata["a"]
+            elif qtype == "text":
+                correct = _normalize_text(user_answer) == _normalize_text(str(qdata["a"]))
+            else:
+                correct = user_answer == qdata["a"]
             record_result(
                 correct=correct,
                 user_answer=user_answer,
                 correct_answer=qdata["a"],
                 level=qdata["level"],
+                subject=qdata.get("subject", subject),
                 topic=qdata["topic"],
                 difficulty=qdata["difficulty"],
             )
@@ -1088,6 +1143,7 @@ def render_test(level: str, topic: str):
 
     with meta_col:
         st.markdown("#### 📌 Bilgiler")
+        st.write(f"- Ders: **{qdata.get('subject', subject)}**")
         st.write(f"- Sınıf: **{qdata['level']}**")
         st.write(f"- Konu: **{qdata['topic']}**")
         st.write(f"- Doğru Cevap: **{qdata['a']}**")

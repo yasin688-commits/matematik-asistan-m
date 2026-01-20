@@ -1,108 +1,137 @@
 import streamlit as st
 import random
+import time
 import math
 
-# Sayfa Yapılandırması
-st.set_page_config(page_title="Yusuf Agaç - Başarı Analizi", page_icon="📈", layout="wide")
+# --- SAYFA VE STİL AYARLARI ---
+st.set_page_config(page_title="Yusuf'un Matematik Üssü", page_icon="⚔️", layout="wide")
+
+st.markdown("""
+    <style>
+    .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+    .rutbe-karti { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; border-bottom: 5px solid #4CAF50; }
+    .soru-box { background: white; padding: 25px; border-radius: 20px; border-left: 10px solid #2196F3; margin-bottom: 20px; }
+    .stButton>button { border-radius: 50px; height: 3em; font-weight: bold; transition: all 0.3s; }
+    .stButton>button:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- SİSTEM HAFIZASI ---
-if 'test_sorulari' not in st.session_state: st.session_state.test_sorulari = []
-if 'mevcut_soru_index' not in st.session_state: st.session_state.mevcut_soru_index = 0
-if 'yanlislar' not in st.session_state: st.session_state.yanlislar = [] # Yanlış yapılanları saklar
-if 'dogru_sayisi' not in st.session_state: st.session_state.dogru_sayisi = 0
+if 'puan' not in st.session_state: st.session_state.puan = 0
+if 'test_aktif' not in st.session_state: st.session_state.test_aktif = False
+if 'soru_no' not in st.session_state: st.session_state.soru_no = 0
+if 'yanlislar' not in st.session_state: st.session_state.yanlislar = []
+if 'zaman_baslangic' not in st.session_state: st.session_state.zaman_baslangic = 0
 
-# --- GÖRSEL ÇÖZÜM ŞEMALARI ---
-def cizim_asistani(tip, veri=None):
-    if tip == "Açı":
-        return """<svg width="100" height="60"><line x1="10" y1="50" x2="90" y2="50" stroke="black" stroke-width="3"/><line x1="10" y1="50" x2="50" y2="10" stroke="red" stroke-width="3"/><text x="10" y="45" font-size="10" fill="red">Açı</text></svg>"""
-    elif tip == "Problem":
-        return """<svg width="100" height="60"><rect x="10" y="10" width="30" height="40" fill="#add8e6" stroke="blue"/><rect x="50" y="10" width="30" height="40" fill="#add8e6" stroke="blue"/><text x="15" y="40" font-size="20">?</text></svg>"""
-    return ""
+# --- RÜTBE HESAPLAMA ---
+def rutbe_bul(puan):
+    if puan < 50: return "Çaylak Matematikçi 🛡️", "#7f8c8d"
+    if puan < 150: return "Sayı Savaşçısı ⚔️", "#27ae60"
+    if puan < 300: return "Açı Ustası 📐", "#2980b9"
+    if puan < 500: return "Problem Çözücü 🧠", "#8e44ad"
+    return "Sayıların Efendisi 👑", "#f1c40f"
 
-# --- SORU MOTORU ---
-def soru_uret():
-    konular = [("Açılar", "Açı"), ("Paralarımız", "Problem"), ("Zaman", "Zaman")]
-    yeni_test = []
-    for i in range(1, 11):
-        konu_adi, tip = random.choice(konular)
-        a, b = random.randint(10, 50), random.randint(2, 9)
-        
-        if konu_adi == "Açılar":
-            d = random.choice([30, 45, 60, 120])
-            s = {"id": i, "soru": f"Ölçüsü {d} derece olan bir açıyı, 180 derecelik doğru açıya tamamlamak için kaç derece eklenmelidir?", 
-                 "siklar": [str(180-d), str(90-d if 90>d else 20), "100", "80"], "cevap": str(180-d), "tip": "Açı",
-                 "analiz": f"Doğru açı 180 derecedir. 180'den {d} çıkartırsak sonucu buluruz."}
-        else:
-            s = {"id": i, "soru": f"Tanesi {b} TL olan kalemlerden {a} tane alan Yusuf, toplam kaç TL ödeme yapar?", 
-                 "siklar": [str(a*b), str(a+b), str(a*b+10), str(a*b-5)], "cevap": str(a*b), "tip": "Problem",
-                 "analiz": f"Tane fiyatı ile adet sayısını çarpmalıyız: {a} x {b} = {a*b}"}
-        
-        random.shuffle(s["siklar"])
-        yeni_test.append(s)
-    return yeni_test
+# --- SORU MOTORU (YENİ NESİL) ---
+def yeni_nesil_soru_uret():
+    konu = random.choice(["Açılar", "Kesirler", "Market Problemi", "Zaman"])
+    if konu == "Açılar":
+        d = random.choice([30, 45, 60, 90, 120])
+        return {
+            "s": f"Yusuf bir pergel ile {d} derecelik bir açı çiziyor. Öğretmeni bu açıyı 'Doğru Açıya' (180°) tamamlamasını istiyor. Yusuf kaç derece daha çizmelidir?",
+            "c": str(180-d), "siklar": [str(180-d), str(180-d-10), "90", "180"], "tip": "Açı",
+            "analiz": f"Doğru açı 180 derecedir. 180 - {d} = {180-d} sonucuna ulaşırız."
+        }
+    elif konu == "Market Problemi":
+        f = random.randint(5, 15)
+        m = random.randint(3, 7)
+        toplam = f * m
+        return {
+            "s": f"Yusuf tanesi {f} TL olan kalemlerden {m} tane alıyor. Kasaya 100 TL verirse ne kadar para üstü alır?",
+            "c": str(100-toplam), "siklar": [str(100-toplam), str(toplam), str(100-toplam+5), "50"], "tip": "Problem",
+            "analiz": f"Önce harcanan para: {f}x{m}={toplam} TL. Para üstü: 100-{toplam}={100-toplam} TL."
+        }
+    return {
+        "s": "Bir günün 1/4'ünü uyuyarak geçiren Yusuf, kaç saat uyumuştur?",
+        "c": "6", "siklar": ["6", "8", "4", "12"], "tip": "Zaman",
+        "analiz": "Bir gün 24 saattir. 24'ün 1/4'ü 24/4 = 6 saattir."
+    }
 
-# --- ARAYÜZ ---
-st.title("🚀 Yusuf Agaç: Akıllı Öğrenme Paneli")
-
-# Yeni Test Butonu
-if st.sidebar.button("♻️ Yeni 10 Soruluk Test Başlat"):
-    st.session_state.test_sorulari = soru_uret()
-    st.session_state.mevcut_soru_index = 0
-    st.session_state.yanlislar = []
-    st.session_state.dogru_sayisi = 0
-    st.rerun()
-
-if not st.session_state.test_sorulari:
-    st.info("Yusuf, başlamak için sol taraftaki butona bas!")
-elif st.session_state.mevcut_soru_index < 10:
-    # --- TEST DEVAM EDİYOR ---
-    soru = st.session_state.test_sorulari[st.session_state.mevcut_soru_index]
-    st.subheader(f"Soru {st.session_state.mevcut_soru_index + 1}: {soru['tip']}")
-    st.write(soru['soru'])
-    
-    secim = st.radio("Cevabını seç:", soru['siklar'], key=f"q_{st.session_state.mevcut_soru_index}")
-    
-    if st.button("Sonraki Soru ➡️"):
-        if secim == soru['cevap']:
-            st.session_state.dogru_sayisi += 1
-        else:
-            # Yanlış veriyi kaydet
-            st.session_state.yanlislar.append({
-                "soru": soru['soru'],
-                "yusufun_cevabi": secim,
-                "dogru_cevap": soru['cevap'],
-                "analiz": soru['analiz'],
-                "tip": soru['tip']
-            })
-        st.session_state.mevcut_soru_index += 1
+# --- YAN PANEL (VELİ VE KARNE) ---
+with st.sidebar:
+    rutbe, renk = rutbe_bul(st.session_state.puan)
+    st.markdown(f"""<div class='rutbe-karti'><h3>{rutbe}</h3><h1 style='color:{renk};'>{st.session_state.puan}</h1><p>Toplam Puan</p></div>""", unsafe_allow_html=True)
+    st.divider()
+    if st.button("♻️ Testi Sıfırla"):
+        st.session_state.clear()
         st.rerun()
+
+# --- ANA EKRAN ---
+st.title("🛡️ Yusuf'un Matematik Macera Üssü")
+
+if not st.session_state.test_aktif:
+    st.markdown("""
+    ### Merhaba Yusuf! 👋
+    Bugünkü görevine hazır mısın? 10 soruluk yeni bir görev seni bekliyor. 
+    **Unutma:** Ne kadar hızlı ve doğru çözersen o kadar çok puan kazanırsın!
+    """)
+    if st.button("🚀 Göreve Başla!"):
+        st.session_state.test_sorulari = [yeni_nesil_soru_uret() for _ in range(10)]
+        st.session_state.test_aktif = True
+        st.session_state.zaman_baslangic = time.time()
+        st.rerun()
+
+elif st.session_state.soru_no < 10:
+    # --- SORU EKRANI ---
+    soru = st.session_state.test_sorulari[st.session_state.soru_no]
+    
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown(f"<div class='soru-box'><h3>Soru {st.session_state.soru_no + 1}</h3><p style='font-size:20px;'>{soru['s']}</p></div>", unsafe_allow_html=True)
+        
+        # Şıklar
+        cevap = st.radio("Cevabını Seç:", soru['siklar'], key=f"q_{st.session_state.soru_no}")
+        
+        if st.button("Onayla ve İlerle ➡️"):
+            # Süre bonusu kontrolü (İlk 30 saniyede ek puan)
+            gecen_sure = time.time() - st.session_state.zaman_baslangic
+            bonus = 5 if gecen_sure < 30 else 0
+            
+            if cevap == soru['c']:
+                st.session_state.puan += (10 + bonus)
+                st.toast(f"Mükemmel! +{10+bonus} Puan", icon="🔥")
+            else:
+                st.session_state.yanlislar.append(soru)
+                st.toast("Sağlık olsun, öğrenmek için bir fırsat!", icon="💡")
+            
+            st.session_state.soru_no += 1
+            st.session_state.zaman_baslangic = time.time() # Zamanı sıfırla
+            st.rerun()
+            
+    with col2:
+        st.info(f"💡 **İpucu:** {soru['tip']} konusundan bir soru çözüyorsun.")
+        st.write("⏱️ **Zaman Bonusunu Kaçırma!**")
+        st.progress(st.session_state.soru_no * 10)
+
 else:
-    # --- TEST BİTTİ: HATA ANALİZ MERKEZİ ---
+    # --- KARNE VE ANALİZ ---
     st.balloons()
-    st.header("🏁 Test Sonucu ve Hata Analizi")
+    st.header("🏁 Görev Tamamlandı!")
     
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Doğru", st.session_state.dogru_sayisi)
-    col2.metric("Yanlış", 10 - st.session_state.dogru_sayisi)
-    col3.metric("Başarı", f"%{st.session_state.dogru_sayisi * 10}")
-
-    if len(st.session_state.yanlislar) > 0:
-        st.divider()
-        st.subheader("🤖 Asistan Çözüm Merkezi (Hatalarını Öğren)")
-        
-        for i, hata in enumerate(st.session_state.yanlislar):
-            with st.expander(f"❌ Soru {i+1} Analizini Gör"):
-                c1, c2 = st.columns([1, 3])
-                with c1:
-                    st.markdown(cizim_asistani(hata['tip']), unsafe_allow_html=True)
-                with c2:
-                    st.write(f"**Soru:** {hata['soru']}")
-                    st.write(f"🔴 Senin Cevabın: {hata['yusufun_cevabi']}")
-                    st.write(f"🟢 Doğru Cevap: {hata['dogru_cevap']}")
-                    st.info(f"💡 **Asistan Diyor ki:** {hata['analiz']}")
-    else:
-        st.success("HİÇ YANLIŞIN YOK! Yusuf, sen bir matematik dâhisisin! 🏆")
-
-    if st.button("Tekrar Test Çöz"):
-        st.session_state.test_sorulari = []
-        st.rerun()
+    c1, c2 = st.columns(2)
+    with c1:
+        st.success(f"Yusuf, bu görevden toplam **{st.session_state.puan}** puana ulaştın!")
+        if st.button("🔄 Yeni Görev Al"):
+            st.session_state.test_aktif = False
+            st.session_state.soru_no = 0
+            st.rerun()
+            
+    with c2:
+        if st.session_state.yanlislar:
+            st.warning("🤖 Asistan Hata Analizi")
+            for y in st.session_state.yanlislar:
+                with st.expander(f"📍 {y['tip']} Sorusu Çözümü"):
+                    st.write(f"**Soru:** {y['s']}")
+                    st.write(f"**Doğru Cevap:** {y['c']}")
+                    st.info(f"**Çözüm Yolu:** {y['analiz']}")
+        else:
+            st.success("HATA YOK! Sen tam bir şampiyonsun! 🏆")

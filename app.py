@@ -1207,6 +1207,29 @@ def render_stats():
             unsafe_allow_html=True,
         )
 
+    st.markdown("#### 📚 Ders Bazlı Durum")
+    if st.session_state.subject_stats:
+        cols = st.columns(min(4, len(st.session_state.subject_stats)))
+        i = 0
+        for subj, stats in st.session_state.subject_stats.items():
+            total_s = stats.get("total", 0)
+            correct_s = stats.get("correct", 0)
+            acc_s = (correct_s / total_s * 100) if total_s else 0
+            with cols[i % len(cols)]:
+                st.markdown(
+                    f"""
+                <div class="card" style="text-align:center;margin-bottom:0.5rem;">
+                    <div class="metric-label">{subj}</div>
+                    <div class="metric-number">{acc_s:.0f}%</div>
+                    <div style="color:#6b7280;font-size:0.85rem;">{correct_s}/{total_s} doğru</div>
+                </div>
+                """,
+                    unsafe_allow_html=True,
+                )
+            i += 1
+    else:
+        st.caption("Ders bazlı istatistik için önce soru çöz.")
+
     st.markdown("#### 🕘 Son Çözülen Sorular")
 
     if not st.session_state.history:
@@ -1221,7 +1244,7 @@ def render_stats():
         <div class="card" style="margin-bottom:0.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                    <span style="font-weight:600;">{icon} {item["level"]} - {item["topic"]}</span><br>
+                    <span style="font-weight:600;">{icon} {item.get("subject","")} · {item["level"]} - {item["topic"]}</span><br>
                     <span style="font-size:0.8rem;color:#6b7280;">
                         Senin cevabın: <b>{item["user_answer"]}</b> · Doğru cevap: <b>{item["correct_answer"]}</b>
                     </span>
@@ -1243,14 +1266,14 @@ def render_stats():
 # ANA UYGULAMA AKIŞI
 # --------------------
 def main():
-    level, topic = render_sidebar()
+    subject, level, topic = render_sidebar()
 
     # İçerik alanı
     page_key = st.session_state.page
     if page_key == "home":
         render_home()
     elif page_key == "test":
-        render_test(level, topic)
+        render_test(subject, level, topic)
     elif page_key == "stats":
         render_stats()
     else:

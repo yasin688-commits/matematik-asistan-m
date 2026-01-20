@@ -256,6 +256,41 @@ def _normalize_text(s: str) -> str:
     return (s or "").strip().casefold()
 
 
+def _make_numeric_choices(answer: int, k: int = 4) -> list[int]:
+    """Doğru cevaptan mantıklı sayısal çeldiriciler üretir (şık)."""
+    answer = int(answer)
+    choices = {answer}
+
+    # Farklı tipte çeldiriciler
+    deltas = [1, 2, 3, 4, 5, 8, 10, 12, 15, 20, 25, 30]
+    random.shuffle(deltas)
+
+    for d in deltas:
+        if len(choices) >= k:
+            break
+        for cand in (answer + d, answer - d):
+            if cand >= 0:
+                choices.add(cand)
+            if len(choices) >= k:
+                break
+
+    # Bazı oransal çeldiriciler (uygun olursa)
+    for cand in (answer * 2, max(0, answer // 2), answer + 50, max(0, answer - 50)):
+        if len(choices) >= k:
+            break
+        choices.add(int(cand))
+
+    # Hâlâ yetmiyorsa rastgele doldur
+    while len(choices) < k:
+        jitter = random.randint(1, 40)
+        cand = max(0, answer + random.choice([-1, 1]) * jitter)
+        choices.add(cand)
+
+    out = list(choices)[:k]
+    random.shuffle(out)
+    return out
+
+
 def generate_4th_grade_question(topic: str):
     """4. sınıf için farklı konu tiplerinde yeni nesil soru üretir."""
     if topic == "Toplama / Çıkarma":
@@ -1047,7 +1082,8 @@ def render_test(subject: str, level: str, topic: str | None):
                 "level": level,
                 "topic": topic or "Toplama / Çıkarma",
                 "subject": "Matematik",
-                "type": "number",
+                "type": "choice",
+                "choices": _make_numeric_choices(a, k=4),
                 "image": None,
             }
         else:

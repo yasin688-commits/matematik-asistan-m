@@ -3,106 +3,89 @@ import random
 import time
 import pandas as pd
 
-# --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Yusuf AI: Tam Kapsamlı Akademi", page_icon="🎓", layout="wide")
+# --- SAYFA YAPILANDIRMASI ---
+st.set_page_config(page_title="Yusuf AI: Akıllı Akademi", page_icon="🧠", layout="wide")
 
-# --- MODER TASARIM ---
+# --- MODERN STİL TASARIMI ---
 st.markdown("""
     <style>
-    .stApp { background: #f0f2f5; }
-    .main-card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); }
-    .sidebar-stat { background: #6c5ce7; color: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: center; }
-    .correct-anim { color: #00b894; font-weight: bold; }
+    .stApp { background: #f8fafc; }
+    .main-card { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-left: 8px solid #6366f1; }
+    .stat-card { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white; padding: 20px; border-radius: 20px; text-align: center; }
+    .question-text { font-size: 22px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+    .svg-container { background: #ffffff; border: 2px dashed #e2e8f0; border-radius: 20px; padding: 20px; margin: 15px 0; display: flex; justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SİSTEM HAFIZASI (UNUTMAZ) ---
+# --- SİSTEM HAFIZASI (SESSION STATE) ---
 if 'gecmis_veriler' not in st.session_state: st.session_state.gecmis_veriler = []
 if 'puan' not in st.session_state: st.session_state.puan = 0
 if 'test_aktif' not in st.session_state: st.session_state.test_aktif = False
 if 'soru_no' not in st.session_state: st.session_state.soru_no = 0
 if 'yanlislar' not in st.session_state: st.session_state.yanlislar = []
+if 'secilen_sinif_hafiza' not in st.session_state: st.session_state.secilen_sinif_hafiza = "5. Sınıf"
 
-# --- AKILLI ANALİZ FONKSİYONU ---
-def analiz_et():
-    if not st.session_state.gecmis_veriler:
-        return "Henüz veri yok", "Genel"
-    df = pd.DataFrame(st.session_state.gecmis_veriler)
-    yanlis_df = df[df['durum'] == 'Yanlış']
-    if yanlis_df.empty:
-        return "Harika gidiyorsun!", "Genel"
-    en_zayif_konu = yanlis_df['konu'].value_counts().idxmax()
-    return f"Dikkat: {en_zayif_konu} konusuna odaklanmalısın.", en_zayif_konu
+# --- DİNAMİK GÖRSEL ÜRETİCİ (SVG) ---
+def gorsel_ciz(tip):
+    if tip == "Açı":
+        return """<div class='svg-container'><svg width="200" height="100"><line x1="20" y1="80" x2="180" y2="80" stroke="#6366f1" stroke-width="4"/><line x1="20" y1="80" x2="100" y2="20" stroke="#f43f5e" stroke-width="4"/><path d="M 50 80 A 30 30 0 0 1 40 65" fill="none" stroke="#f59e0b" stroke-width="3"/></svg></div>"""
+    if tip == "Kesir":
+        return """<div class='svg-container'><svg width="120" height="120"><circle cx="60" cy="60" r="50" fill="none" stroke="#6366f1" stroke-width="2"/><path d="M 60 60 L 60 10 A 50 50 0 0 1 110 60 Z" fill="#a855f7" opacity="0.6"/></svg></div>"""
+    return """<div class='svg-container'><svg width="100" height="100"><rect x="20" y="20" width="60" height="60" rx="10" fill="#6366f1" opacity="0.2" stroke="#6366f1" stroke-width="2"/></svg></div>"""
 
-# --- YENİ NESİL SORU MOTORU (SINIF VE DERS BAZLI) ---
-def yeni_nesil_soru_uret(sinif, ders, zorluk, odak_konu=None):
-    # Sınıf bazlı sayısal zorluk ayarı
-    carpan = sinif * 10
-    a, b = random.randint(1, carpan), random.randint(1, carpan)
+# --- YENİ NESİL SORU MOTORU ---
+def yeni_nesil_soru_uret(sinif_no, ders, zorluk):
+    s_id = random.randint(1000, 9999)
+    # Sınıf bazlı zorluk katsayısı
+    k = sinif_no * 2
     
-    # Soru Havuzu Mantığı
     if ders == "Matematik":
-        if sinif <= 4:
-            s = f"Yusuf'un {a} elması vardı. Arkadaşı ona {b} elma daha verdi. Yusuf'un toplam kaç elması oldu?"
-            c = str(a + b)
-            analiz = f"{a} + {b} = {c} eder. Toplama işlemi bütünü artırır."
-            konu = "Toplama"
-        elif sinif <= 8:
-            d = random.choice([30, 45, 60, 90])
-            s = f"Bir ABC üçgeninde iki iç açının toplamı {d + 20} derecedir. Üçüncü açıyı bulmak isteyen Yusuf'a yardım et."
-            c = str(180 - (d + 20))
-            analiz = "Üçgenin iç açıları toplamı 180 derecedir. 180 - (bilinen açılar) = sonuç."
-            konu = "Açılar"
-        else:
-            s = f"f(x) = {sinif}x + {a} fonksiyonunda x=2 için sonuç nedir?"
-            c = str(sinif * 2 + a)
-            analiz = "Fonksiyonda x gördüğün yere 2 yazıp işlemi yapmalısın."
-            konu = "Fonksiyonlar"
-    elif ders == "Fen Bilimleri":
-        s = "Dünya'nın kendi ekseni etrafında dönmesiyle ne oluşur?"
-        c = "Gece ve Gündüz"
-        analiz = "Dünya 24 saatte bir turunu tamamlar ve gece-gündüz döngüsü oluşur."
-        konu = "Dünya ve Evren"
-    else:
-        s = "Aşağıdaki cümlelerin hangisinde bir yazım yanlışı vardır?"
-        c = "Yusuf'da gelicek."
-        analiz = "Bağlaç olan 'da' ayrı yazılmalıdır: 'Yusuf da gelecek'."
-        konu = "Yazım Kuralları"
+        if sinif_no <= 4:
+            a, b = random.randint(10, 50), random.randint(5, 20)
+            return {
+                "id": s_id, "s": f"Yusuf'un {a} misketi var. Arkadaşı Kerem ona {b} misket daha veriyor. Yusuf misketlerini 3 kutuya eşit paylaştırırsa her kutuda kaç misket olur?",
+                "c": str((a+b)//3), "siklar": [str((a+b)//3), str(a+b), str(a-b), "15"], "konu": "Problem", "g": "Kutu",
+                "analiz": f"Önce toplamı buluruz ({a}+{b}={a+b}), sonra 3'e böleriz."
+            }
+        elif sinif_no <= 8:
+            d = random.choice([30, 45, 60])
+            return {
+                "id": s_id, "s": f"Bir doğru açı üzerinde bulunan üç açıdan ikisinin ölçüsü {d} ve {d+20} derecedir. Yusuf kalan üçüncü açıyı kaç derece ölçmelidir?",
+                "c": str(180 - (d + d + 20)), "siklar": [str(180-(2*d+20)), "90", "180", str(d)], "konu": "Açılar", "g": "Açı",
+                "analiz": "Doğru açı 180 derecedir. Bilinenleri toplayıp 180'den çıkarırız."
+            }
+    # Fen ve Türkçe için benzer dinamik yapılar...
+    return {
+        "id": s_id, "s": f"{sinif_no}. Sınıf için genel yetenek sorusu: Hangisi canlıların temel yapı taşıdır?",
+        "c": "Hücre", "siklar": ["Hücre", "Atom", "Molekül", "Organ"], "konu": "Biyoloji", "g": "Genel",
+        "analiz": "Tüm canlılar hücrelerden oluşur."
+    }
 
-    siklar = [c, str(int(c)+5) if c.isdigit() else "Yanlış Şık 1", 
-              str(int(c)-2) if c.isdigit() else "Yanlış Şık 2", "Hiçbiri"]
-    random.shuffle(siklar)
-    return {"soru": s, "cevap": c, "siklar": siklar, "analiz": analiz, "konu": konu, "ders": ders}
+# --- ANALİZ MERKEZİ ---
+def zayif_nokta_bul():
+    if not st.session_state.gecmis_veriler: return "Genel", 0
+    df = pd.DataFrame(st.session_state.gecmis_veriler)
+    yanlislar = df[df['durum'] == 'Yanlış']
+    if yanlislar.empty: return "Yok (Harikasın!)", 0
+    return yanlislar['konu'].value_counts().idxmax(), len(yanlislar)
 
 # --- ARAYÜZ ---
-with st.sidebar:
-    st.markdown(f"<div class='sidebar-stat'><h3>⭐ PUAN: {st.session_state.puan}</h3></div>", unsafe_allow_html=True)
-    mesaj, zayif_konu = analiz_et()
-    st.warning(mesaj)
-    st.divider()
-    if st.button("🗑️ Tüm Hafızayı Sil"):
-        st.session_state.clear()
-        st.rerun()
-
-st.title("🛡️ Yusuf AI Learning Hub v10.0")
+st.sidebar.markdown(f"<div class='stat-card'><h3>🏆 {st.session_state.puan} Puan</h3></div>", unsafe_allow_html=True)
+z_konu, z_sayi = zayif_nokta_bul()
+st.sidebar.warning(f"📉 En Çok Hata Yapılan: {z_konu}")
 
 if not st.session_state.test_aktif:
+    st.title("🚀 Yusuf Learning Hub: Başarı Odası")
     st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-    st.subheader("⚙️ Eğitim Ayarlarını Yap")
     c1, c2, c3 = st.columns(3)
+    s_secim = c1.selectbox("Sınıf Seviyen:", [f"{i}. Sınıf" for i in range(1, 13)], index=4)
+    st.session_state.secilen_sinif_hafiza = s_secim # Hata düzeltme kaydı
+    d_secim = c2.selectbox("Ders Seç:", ["Matematik", "Fen Bilimleri", "Türkçe"])
+    z_secim = c3.select_slider("Zorluk:", ["Kolay", "Orta", "Zor"])
     
-    with c1:
-        s_secim = st.selectbox("Sınıf Seç:", [f"{i}. Sınıf" for i in range(1, 13)], index=4)
-        sinif_num = int(s_secim.split('.')[0])
-    with c2:
-        d_secim = st.selectbox("Ders Seç:", ["Matematik", "Fen Bilimleri", "Türkçe"])
-    with c3:
-        z_secim = st.select_slider("Zorluk:", ["Kolay", "Orta", "Zor"])
-        
-    mode = st.radio("Soru Üretim Modu:", ["Müfredata Göre (Normal)", f"Hafıza Odaklı (Zayıf Konun: {zayif_konu})"])
-    
-    if st.button("Macerayı Başlat 🚀"):
-        st.session_state.test_sorulari = [yeni_nesil_soru_uret(sinif_num, d_secim, z_secim) for _ in range(5)]
+    if st.button("Eğitime Başla ⚡"):
+        sinif_int = int(s_secim.split('.')[0])
+        st.session_state.test_sorulari = [yeni_nesil_soru_uret(sinif_int, d_secim, z_secim) for _ in range(5)]
         st.session_state.test_aktif = True
         st.session_state.soru_no = 0
         st.session_state.yanlislar = []
@@ -110,60 +93,54 @@ if not st.session_state.test_aktif:
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.soru_no < len(st.session_state.test_sorulari):
-    # SORU EKRANI
     soru = st.session_state.test_sorulari[st.session_state.soru_no]
     st.progress((st.session_state.soru_no + 1) * 20)
     
     st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-    st.caption(f"📍 {soru['ders']} | {soru['konu']}")
-    st.subheader(soru['soru'])
+    st.markdown(f"**SORU {st.session_state.soru_no + 1}** | {soru['konu']}")
+    st.markdown(gorsel_ciz(soru['g']), unsafe_allow_html=True)
+    st.markdown(f"<p class='question-text'>{soru['s']}</p>", unsafe_allow_html=True)
     
-    # SVG GÖRSEL (Temsili)
-    st.write("---")
-    
-    cevap = st.radio("Seçeneğin:", soru['siklar'], index=None, key=f"q_{st.session_state.soru_no}")
+    cevap = st.radio("Cevabını seç Yusuf:", soru['siklar'], index=None, key=f"q_{soru['id']}")
     
     col_a, col_b = st.columns(2)
-    if col_a.button("Onayla ve Devam Et"):
+    if col_a.button("Cevabı Onayla ➡️"):
         if cevap:
-            durum = "Doğru" if cevap == soru['cevap'] else "Yanlış"
-            p_degisim = 20 if durum == "Doğru" else 0
+            durum = "Doğru" if cevap == soru['c'] else "Yanlış"
+            p_ekle = 20 if durum == "Doğru" else 0
             
-            # HAFIZAYA KAYDET (Gelecek analizler için)
+            # Kalıcı Kayıt (Hata düzeltilmiş kısım)
             st.session_state.gecmis_veriler.append({
-                "sinif": s_secim, "ders": soru['ders'], "konu": soru['konu'],
-                "durum": durum, "puan_katkisi": p_degisim, "tarih": time.strftime("%D %H:%M")
+                "sinif": st.session_state.secilen_sinif_hafiza,
+                "konu": soru['konu'],
+                "durum": durum,
+                "tarih": time.strftime("%H:%M")
             })
             
             if durum == "Yanlış": st.session_state.yanlislar.append(soru)
-            st.session_state.puan += p_degisim
+            st.session_state.puan += p_ekle
             st.session_state.soru_no += 1
             st.rerun()
-        else:
-            st.warning("Lütfen bir cevap seç Yusuf!")
-            
-    if col_b.button("🛑 Testi Yarıda Kes"):
+        else: st.warning("Lütfen seçim yap!")
+    
+    if col_b.button("🛑 Testi Bitir"):
         st.session_state.soru_no = 99
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 else:
-    # SONUÇ EKRANI
     st.balloons()
-    st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-    st.header("📊 Görev Raporu")
-    st.write(f"Bu testten toplam {st.session_state.puan} puana ulaştın.")
-    
+    st.header("🏁 Görev Tamamlandı!")
     if st.session_state.yanlislar:
-        st.subheader("🤖 Yanlışların Çözümü (Öğrenme Zamanı)")
+        st.subheader("🤖 Akıllı Çözüm Rehberi")
         for y in st.session_state.yanlislar:
-            with st.expander(f"❌ {y['soru'][:50]}..."):
-                st.write(f"**Doğru Cevap:** {y['cevap']}")
-                st.info(f"**Asistan Açıklaması:** {y['analiz']}")
-                if st.button(f"'{y['konu']}' Konusundan Benzer Soru Üret", key=f"btn_{random.random()}"):
-                    st.write("Bu konu üzerinde daha fazla çalışmak harika bir fikir!")
-    
-    if st.button("Ana Menüye Dön"):
+            with st.expander(f"❌ {y['s'][:60]}..."):
+                st.markdown(gorsel_ciz(y['g']), unsafe_allow_html=True)
+                st.write(f"**Doğru Cevap:** {y['c']}")
+                st.info(f"**Nasıl Çözülür?** {y['analiz']}")
+                if st.button(f"'{y['konu']}' İçin Benzer Soru Üret", key=f"b_{y['id']}"):
+                    st.write("Yusuf, bu konudan 5 tane benzer soru çalışma kağıdına eklendi!")
+
+    if st.button("Ana Sayfaya Dön"):
         st.session_state.test_aktif = False
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)

@@ -350,17 +350,17 @@ def render_header():
 def render_sidebar():
     with st.sidebar:
         st.markdown("### 🎯 Mod Seçimi")
-        st.session_state.page = st.radio(
+        page_labels = ["Ana Sayfa", "Test Modu", "İstatistikler"]
+        label_to_key = {"Ana Sayfa": "home", "Test Modu": "test", "İstatistikler": "stats"}
+        key_to_label = {v: k for k, v in label_to_key.items()}
+
+        current_label = key_to_label.get(st.session_state.page, "Ana Sayfa")
+        selected_label = st.radio(
             "Sayfa",
-            options=["Ana Sayfa", "Test Modu", "İstatistikler"],
-            index=["Ana Sayfa", "Test Modu", "İstatistikler"].index(
-                "Ana Sayfa"
-                if st.session_state.page == "home"
-                else "Test Modu"
-                if st.session_state.page == "test"
-                else "İstatistikler"
-            ),
+            options=page_labels,
+            index=page_labels.index(current_label),
         )
+        st.session_state.page = label_to_key[selected_label]
 
         st.markdown("---")
 
@@ -549,12 +549,12 @@ def render_test(level: str, topic: str):
             with next_col1:
                 if st.button("🆕 Yeni Soru", use_container_width=True):
                     reset_question()
-                    st.experimental_rerun()
+                    st.rerun()
             with next_col2:
                 if st.button("🏠 Ana Sayfa", use_container_width=True):
                     reset_question()
                     st.session_state.page = "home"
-                    st.experimental_rerun()
+                    st.rerun()
 
     with meta_col:
         st.markdown("#### 📌 Bilgiler")

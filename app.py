@@ -1,97 +1,102 @@
 import streamlit as st
-import PyPDF2
 import random
 import time
 
-# Sayfa Ayarları
-st.set_page_config(page_title="Yusuf Agaç - Yeni Nesil Matematik", page_icon="🧠", layout="wide")
+# Sayfa Yapılandırması
+st.set_page_config(page_title="Yusuf Agaç - Akıllı Matematik", page_icon="📐")
 
-# Hafıza Yönetimi (Session State)
-if 'correct' not in st.session_state: st.session_state.correct = 0
-if 'wrong' not in st.session_state: st.session_state.wrong = 0
-if 'soru_havuzu' not in st.session_state:
-    # Başlangıç için birkaç yeni nesil örnek soru
-    st.session_state.soru_havuzu = [
-        {"soru": "Bir manavda elmaların kilosu 15 TL, armutların kilosu 20 TL'dir. Yusuf 3 kg elma ve 2 kg armut alıp 100 TL verirse kaç TL para üstü alır?", "cevap": 15},
-        {"soru": "Bir otobüste 45 yolcu vardır. İlk durakta 12 kişi inip 7 kişi biniyor. Son durumda otobüste kaç kişi vardır?", "cevap": 40},
-        {"soru": "Bir kenarı 12 cm olan bir karenin çevresi, bir eşkenar üçgenin çevresine eşittir. Üçgenin bir kenarı kaç cm'dir?", "cevap": 16}
-    ]
-if 'aktif_soru' not in st.session_state:
-    st.session_state.aktif_soru = random.choice(st.session_state.soru_havuzu)
+# Hafıza Yönetimi
+if 'soru_tipi' not in st.session_state:
+    st.session_state.soru_tipi = "Açılar"
+if 'aktif_derece' not in st.session_state:
+    st.session_state.aktif_derece = random.randint(10, 170)
+if 'feedback' not in st.session_state:
+    st.session_state.feedback = ""
 
-# --- TASARIM ---
+# --- ÖZEL ÇİZİM FONKSİYONU (AÇILAR) ---
+def aci_ciz(derece):
+    import math
+    rad = math.radians(derece)
+    x = 100 + 80 * math.cos(-rad)
+    y = 100 + 80 * math.sin(-rad)
+    
+    svg = f"""
+    <svg width="200" height="200" viewBox="0 0 200 200" style="background-color: white; border-radius: 10px;">
+        <line x1="100" y1="100" x2="180" y2="100" style="stroke:black;stroke-width:3" />
+        <line x1="100" y1="100" x2="{x}" y2="{y}" style="stroke:red;stroke-width:3" />
+        <circle cx="100" cy="100" r="5" fill="blue" />
+        <text x="10" y="20" fill="black">Soru: Bu hangi açı?</text>
+    </svg>
+    """
+    return svg
+
+# --- TASARIM VE ASİSTAN ---
 st.markdown("""
     <style>
-    .main { background-color: #f0f2f6; }
-    .stAlert { border-radius: 20px; }
-    .soru-alani { background-color: #ffffff; padding: 30px; border-radius: 15px; border-left: 10px solid #ff4b4b; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .asistan-kutusu { background-color: #e1f5fe; padding: 15px; border-radius: 15px; border-left: 5px solid #0288d1; margin: 10px 0; }
+    .stButton>button { border-radius: 20px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏆 Yusuf Agaç: Yeni Nesil Matematik İstasyonu")
+st.title("🎓 Yusuf Agaç: Matematik Asistanı")
 
-# Sol Panel: Başarı Takibi
-with st.sidebar:
-    st.header("📊 Başarı Durumu")
-    st.metric("Doğru", st.session_state.correct)
-    st.metric("Yanlış", st.session_state.wrong)
-    
-    st.divider()
-    level = "Çaylak"
-    if st.session_state.correct > 10: level = "Matematik Ustası"
-    if st.session_state.correct > 20: level = "Profesör Yusuf"
-    st.subheader(f"Rütbe: {level}")
+# --- ASİSTAN BÖLÜMÜ ---
+st.markdown(f"""
+<div class="asistan-kutusu">
+    <strong>🤖 Akıllı Asistan:</strong> Merhaba Yusuf! Bugün hangi konuyu fethedeceğiz? 
+    Açıları mı yoksa problemleri mi?
+</div>
+""", unsafe_allow_html=True)
 
-# --- ANA BÖLÜM: YENİ NESİL SORU PANELİ ---
-st.header("🧠 Günün Yeni Nesil Sorusu")
+# --- SORU ALANI ---
+tab1, tab2 = st.tabs(["📐 Açı Tanıma", "📝 Yeni Nesil Sorular"])
 
-with st.container():
-    st.markdown(f'<div class="soru-alani"><h3>{st.session_state.aktif_soru["soru"]}</h3></div>', unsafe_allow_html=True)
+with tab1:
+    st.header("Bu Açı Kaç Derece?")
+    st.write("Aşağıdaki kırmızı çizginin oluşturduğu açıyı tahmin et.")
     
-    cevap = st.number_input("Cevabını buraya yaz Yusuf:", key="cevap_input", step=1)
+    st.markdown(aci_ciz(st.session_state.aktif_derece), unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
+    tahmin = st.number_input("Tahminin (Derece):", key="aci_tahmin", step=1)
     
-    if col1.button("🔥 Kontrol Et"):
-        if cevap == st.session_state.aktif_soru["cevap"]:
+    if st.button("Kontrol Et (Açı)"):
+        fark = abs(tahmin - st.session_state.aktif_derece)
+        if fark <= 5: # 5 dereceye kadar yakınsa doğru kabul et
             st.balloons()
-            st.success("HARİKASIN YUSUF! Yeni nesil mantığını kavradın! ✅")
-            st.session_state.correct += 1
+            st.success(f"Harikasın Yusuf! Tam olarak {st.session_state.aktif_derece}° idi.")
         else:
-            st.error(f"Dikkatli düşün Yusuf! ❌ Doğru cevap {st.session_state.aktif_soru['cevap']} olmalıydı.")
-            st.session_state.wrong += 1
-            
-    if col2.button("➡️ Yeni Soru Oluştur"):
-        # Burada yeni nesil mantığıyla sayıları rastgele değiştirerek yeni soru üretiyoruz
-        tipler = [
-            {"s": f"Yusuf bir kitabın her gün {random.randint(10,20)} sayfasını okuyor. {random.randint(3,7)} gün sonra kitabın bitmesine 15 sayfa kaldığına göre kitap kaç sayfadır?", "c": None},
-            {"s": f"Tanesi {random.randint(5,15)} TL olan kalemlerden {random.randint(4,8)} tane alan Yusuf, kasaya {random.randint(100,200)} TL verirse kaç TL para üstü alır?", "c": None}
-        ]
-        secilen = random.choice(tipler)
-        # Basit bir cevap hesaplama mantığı ekliyoruz (Örn: kalem sorusu için)
-        if "kalem" in secilen["s"]:
-            # Sorudaki rakamları ayıklayıp otomatik hesaplama yaptırabiliriz veya hazır havuzdan seçebiliriz
-            st.session_state.aktif_soru = random.choice(st.session_state.soru_havuzu) 
+            st.error("Yanlış Cevap! Asistan yardımı geliyor...")
+            with st.expander("🔍 Çözüm Animasyonu & Anlatımı"):
+                st.write(f"Bak Yusuf, açıları ölçerken başlangıç çizgisinden (mavi nokta) ne kadar yukarı kalktığımıza bakarız.")
+                st.write(f"1. Bu bir **{ 'DAR' if st.session_state.aktif_derece < 90 else 'GENİŞ' if st.session_state.aktif_derece > 90 else 'DİK'}** açıdır.")
+                st.write(f"2. Doğru cevap: **{st.session_state.aktif_derece}°**")
+                st.info("İpucu: Eğer dik olsaydı L harfi gibi görünürdü (90°).")
+
+with tab2:
+    st.header("Mantık Sorusu")
+    s1 = random.randint(3, 8)
+    s2 = random.randint(10, 20)
+    soru = f"Yusuf her gün {s1} sayfa kitap okuyor. 10 gün sonra kitabın bitmesine {s2} sayfa kalıyor. Kitap toplam kaç sayfa?"
+    dogru_cevap = (s1 * 10) + s2
+    
+    st.write(soru)
+    cevap = st.number_input("Cevabın:", key="mantik_cevap", step=1)
+    
+    if st.button("Kontrol Et (Mantik)"):
+        if cevap == dogru_cevap:
+            st.success("Tebrikler Yusuf! Mantık kuralları senden sorulur. 🏆")
         else:
-            st.session_state.aktif_soru = random.choice(st.session_state.soru_havuzu)
-        
-        st.rerun()
+            st.error("Hatalı işlem! Asistan hemen açıklıyor:")
+            st.markdown(f"""
+            <div style="padding:10px; background:#fff3e0; border-radius:10px;">
+                <strong>Adım Adım Çözüm:</strong><br>
+                1. 10 günde okuduğun: {s1} sayfa x 10 gün = {s1*10} sayfa.<br>
+                2. Kalan sayfa: {s2}.<br>
+                3. Toplam: {s1*10} + {s2} = <b>{dogru_cevap}</b> sayfa.
+            </div>
+            """, unsafe_allow_html=True)
 
-# --- PDF ANALİZ BÖLÜMÜ ---
-st.divider()
-st.header("📂 Akıllı PDF Analizi")
-uploaded_file = st.file_uploader("Çalışacağın PDF'i buraya yükle", type="pdf")
-
-if uploaded_file:
-    reader = PyPDF2.PdfReader(uploaded_file)
-    full_text = "".join([page.extract_text() for page in reader.pages])
-    
-    tab1, tab2 = st.tabs(["📑 Akıllı Özet", "🎯 Konu Testi"])
-    
-    with tab1:
-        st.write("Yapay zeka notlarını okuyor...")
-        st.info(full_text[:700] + "...") # Burası AI API ile geliştirilebilir
-        
-    with tab2:
-        st.write("Bu metne göre Yusuf'a özel sorular hazırlanıyor...")
-        st.warning("Soru: Metindeki en önemli matematiksel kavramı bulup bir cümlede kullan.")
+# Yeni Soru Butonu
+if st.button("🔄 Yeni Soru Getir"):
+    st.session_state.aktif_derece = random.randint(10, 170)
+    st.rerun()

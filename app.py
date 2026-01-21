@@ -1,31 +1,80 @@
-// 1. EKRAN AÇILDIĞINDA YAPILACAKLAR
-When Screen1.Initialize:
-   set AdMob_Banner.LoadAd to "True"
-   set Label_Title.Text to "4. Sınıf Testleri"
+import streamlit as st
 
-// 2. MENÜ BUTONLARI (9 Adet Kart İçin Tek Mantık)
-When Card_Testler.Click: open_screen("Testler_Sayfasi")
-When Card_Video.Click:  open_screen("Video_Sayfasi")
-When Card_Oyun.Click:   open_screen("Oyun_Sayfasi")
-When Card_Konu.Click:   open_screen("Konu_Anlatimi_Sayfasi")
-When Card_Favori.Click: open_screen("Favoriler_Sayfasi")
-When Card_İstatistik.Click: open_screen("Istatistik_Sayfasi")
+# Sayfa Ayarları
+st.set_page_config(page_title="5. Sınıf Tüm Dersler", layout="centered")
 
-// 3. HESABIMI SİL (Diyalog Penceresi)
-When Card_HesapSil.Click:
-   call Notifier1.ShowChooseDialog(
-      message = "Hesabınızı silmek istediğinize emin misiniz?",
-      title = "UYARI",
-      button1Text = "Evet, Sil",
-      button2Text = "İptal",
-      cancelable = False
-   )
+# Görseldeki Mobile Yakın Tasarım İçin CSS
+st.markdown("""
+    <style>
+    .main {
+        background-color: #001C30;
+    }
+    .stButton>button {
+        width: 100%;
+        height: 100px;
+        border-radius: 15px;
+        border: none;
+        color: black;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    /* Kart Renkleri */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(1) button { background-color: #90CAF9; } /* Mavi */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(2) button { background-color: #A5D6A7; } /* Yeşil */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(3) button { background-color: #EF9A9A; } /* Kırmızı */
+    
+    .header-text {
+        color: white;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        padding-bottom: 20px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-When Notifier1.AfterChoosing(choice):
-   if choice == "Evet, Sil":
-      call Firebase_DB.DeleteUser(UserID)
-      show_message("Hesabınız silindi.")
+# Başlık
+st.markdown('<p class="header-text">4. Sınıf Testleri</p>', unsafe_allow_html=True)
 
-// 4. REKLAMLARI KALDIR BUTONU
-When Button_ReklamKaldir.Click:
-   call InAppBilling.LaunchPurchaseFlow(productID = "reklam_kaldir_premium")
+# 3x3 Izgara Yapısı (Grid)
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("📝\nTestler"):
+        st.info("Testler Sayfası Hazırlanıyor...")
+    if st.button("🎬\nVideolar"):
+        st.info("Videolar Sayfası Hazırlanıyor...")
+    if st.button("🎮\nEğitici Oyunlar"):
+        st.info("Oyunlar Sayfası Hazırlanıyor...")
+
+with col2:
+    if st.button("❓\nRastgele Mod"):
+        st.info("Rastgele Sorular Getiriliyor...")
+    if st.button("❤️\nFavori Sorular"):
+        st.info("Favorileriniz...")
+    if st.button("📅\nÖnemli Günler"):
+        st.info("Takvim Açılıyor...")
+
+with col3:
+    if st.button("📖\nKonu Anlatımı"):
+        st.info("Konu Listesi...")
+    if st.button("📊\nİstatistiklerim"):
+        st.info("Başarı Durumunuz...")
+    if st.button("❌\nHesabımı Sil"):
+        st.warning("Emin misiniz?")
+
+st.write("---")
+
+# Reklamları Kaldır Butonu
+if st.button("🚫 Reklamları Kaldır", use_container_width=True):
+    st.success("Premium üyelik sayfasına yönlendiriliyorsunuz...")
+
+# Alt Navigasyon (Simüle edilmiş)
+st.markdown("""
+    <div style="background-color: white; padding: 10px; border-radius: 10px; display: flex; justify-content: space-around;">
+        <span style="color: blue; font-size: 20px;">🏠</span>
+        <span style="font-size: 20px;">📋</span>
+        <span style="font-size: 20px;">⏹️</span>
+        <span style="font-size: 20px;">⭐</span>
+    </div>
+    """, unsafe_allow_html=True)

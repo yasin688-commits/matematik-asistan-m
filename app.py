@@ -1,5 +1,7 @@
 import streamlit as st
 import random
+import json
+from openai import OpenAI
 
 # 1. SAYFA AYARLARI VE TASARIM
 st.set_page_config(page_title="5. Sınıf Eğitim Portalı", layout="centered")
@@ -17,11 +19,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. HATA VERMEYEN SORU ÜRETİCİSİ
+# 2. HATA VERMEYEN SABİT SORU ÜRETİCİSİ (YEDEK)
 def soru_getir(ders, unite, soru_no):
-    # Tohumlama yaparak her sorunun her seferinde aynı gelmesini sağlıyoruz
     random.seed(f"{ders}_{unite}_{soru_no}")
-    
     if ders == "Fen Bilimleri":
         soru_metni = "Güneş ile ilgili hangisi uygun bir yöntem değildir?"
         dogru_cevap = "Doğrudan büyüteçle bakmak"
@@ -36,16 +36,47 @@ def soru_getir(ders, unite, soru_no):
         soru_metni = f"{ders} {unite} Soru {soru_no}: Bu konu hakkında hangisi doğrudur?"
         dogru_cevap = "Doğru Seçenek"
         yanlislar = ["Yanlış A", "Yanlış B", "Yanlış C"]
-
-    # Şıkları birleştir ve karıştır
     secenekler = yanlislar + [dogru_cevap]
     random.shuffle(secenekler)
-    
     return {
         "soru": soru_metni,
         "A": secenekler[0], "B": secenekler[1], "C": secenekler[2], "D": secenekler[3],
-        "dogru_icerik": dogru_cevap # Index yerine içerik kontrolü yaparak hatayı önlüyoruz
+        "dogru_icerik": dogru_cevap
     }
+
+# 2b. YAPAY ZEKÂ SORU ÜRETİCİSİ (ÖN TANIMLI KAYNAK)
+client = OpenAI()  # OPENAI_API_KEY ortam değişkeni gerekli
+
+@st.cache_data(show_spinner=False)
+def ai_soru_getir(ders, unite, soru_no):
+    prompt = (
+        f"5. sınıf seviyesi için {ders} / {unite} konusuna ait "
+        f"Türkçe, tek doğru cevaplı bir soru üret. "
+        f"JSON olarak dön: " 
+        f'{{"soru": "...", "dogru": "...", "yanlislar": ["...","...","..."]}}. '
+        f"Yanlışlar anlamca doğruya yakın ama yanlış olsun."
+    )
+    try:
+        resp = client.responses.create(
+            model="gpt-4o-mini",   # gerekirse değiştir
+            temperature=0.35,
+            max_output_tokens=300,
+            response_format={"type": "json_object"},
+            input=[{"role": "user", "content": prompt}]
+        )
+        content = resp.output_parsed  # {soru, dogru, yanlislar}
+        dogru_cevap = content["dogru"]
+        yanlislar = content["yanlislar"]
+        secenekler = yanlislar + [dogru_cevap]
+        random.shuffle(secenekler)
+        return {
+            "soru": content["soru"],
+            "A": secenekler[0], "B": secenekler[1], "C": secenekler[2], "D": secenekler[3],
+            "dogru_icerik": dogru_cevap
+        }
+    except Exception as e:
+        st.warning(f"Yapay zekâ sorusu üretilemedi, yerel soruya geçildi. Hata: {e}")
+        return soru_getir(ders, unite, soru_no)
 
 # 3. OTURUM DURUMU
 if 'page' not in st.session_state: st.session_state.page = 'home'
@@ -105,11 +136,11 @@ elif st.session_state.page == 'quiz':
     unite = st.session_state.active_unite
     idx = st.session_state.q_idx
     t_key = f"{ders}_{unite}"
-    
     if t_key not in st.session_state.stats: st.session_state.stats[t_key] = {"d": 0, "y": 0}
-    
-    soru_data = soru_getir(ders, unite, idx + 1)
-    
+
+    # AI tabanlı soru (yedek: soru_getir)
+    soru_data = ai_soru_getir(ders, unite, idx + 1)
+
     # Üst Bilgi
     st.markdown(f"""
         <div class="quiz-header">

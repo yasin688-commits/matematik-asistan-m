@@ -1,40 +1,59 @@
 import streamlit as st
+import time
 
 # Sayfa Ayarları
-st.set_page_config(page_title="5. Sınıf Eğitim Paneli", layout="centered")
+st.set_page_config(page_title="Eğitim Uygulaması v4", layout="centered")
 
 # --- TÜM GÖRSEL TASARIM (CSS) ---
 st.markdown("""
     <style>
     .main { background-color: #001C30; }
     
-    /* Ana Sayfa Grid Kartları */
-    .stButton>button { width: 100%; border-radius: 15px; font-weight: bold; }
-    
-    /* Kategori Kartları (Somon/Kırmızı) */
-    .cat-btn button { background-color: #FF8A80 !important; color: #102A43 !important; height: 80px !important; font-size: 18px !important; }
+    /* Üst Bilgi Barı (Soru Ekranı) */
+    .quiz-header {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        background-color: #1a3a5a;
+        padding: 10px;
+        border-radius: 10px;
+        color: white;
+        margin-bottom: 10px;
+    }
+    .score-badge { padding: 5px 15px; border-radius: 15px; font-weight: bold; }
+    .correct-bg { background-color: #4CAF50; } /* Yeşil */
+    .wrong-bg { background-color: #F44336; }   /* Kırmızı */
 
-    /* Test Listesi Kartları (Yeşil) */
-    .test-card { background-color: #8BC34A; border-radius: 20px; padding: 15px; margin-bottom: 10px; color: #102A43; }
-    .stats-container { display: flex; justify-content: space-around; background: rgba(255,255,255,0.2); border-radius: 10px; padding: 5px; margin-top: 10px; }
-    
-    /* Soru Ekranı Stili */
-    .question-box { background-color: white; padding: 20px; border-radius: 15px; color: black; margin-bottom: 20px; font-size: 18px; font-weight: bold; border-left: 5px solid #2196F3; }
-    
-    .header-text { color: white; text-align: center; font-size: 22px; font-weight: bold; padding: 10px; border-bottom: 1px solid #444; margin-bottom: 20px; }
-    
-    /* Alt Navigasyon */
+    /* Soru Kutusu */
+    .question-container {
+        background-color: white;
+        color: black;
+        padding: 20px;
+        border-radius: 5px;
+        font-family: 'Arial';
+        line-height: 1.5;
+        margin-bottom: 20px;
+        border-bottom: 4px solid #ddd;
+    }
+
+    /* Cevap Butonları (A, B, C, D) */
+    .answer-row { display: flex; justify-content: space-between; gap: 5px; margin-top: 20px; }
+    .ans-btn { flex: 1; height: 50px; border-radius: 10px; font-weight: bold; border: 2px solid #ccc; }
+
+    /* Navigasyon Barı */
     .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #ccc; z-index: 100; }
+    
+    /* Kategori ve Kart Tasarımları */
+    .test-card { background-color: #8BC34A; border-radius: 20px; padding: 15px; margin-bottom: 10px; color: #102A43; }
+    .cat-btn button { background-color: #FF8A80 !important; color: #102A43 !important; height: 60px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- OTURUM VE SAYFA YÖNETİMİ ---
-if 'page' not in st.session_state:
-    st.session_state.page = 'home'
-if 'current_question' not in st.session_state:
-    st.session_state.current_question = 0
-if 'score' not in st.session_state:
-    st.session_state.score = 0
+# --- OTURUM YÖNETİMİ ---
+if 'page' not in st.session_state: st.session_state.page = 'home'
+if 'q_index' not in st.session_state: st.session_state.q_index = 1
+if 'corrects' not in st.session_state: st.session_state.corrects = 4
+if 'wrongs' not in st.session_state: st.session_state.wrongs = 10
 
 def change_page(target):
     st.session_state.page = target
@@ -44,81 +63,81 @@ def change_page(target):
 
 # 1. ADIM: ANA SAYFA
 if st.session_state.page == 'home':
-    st.markdown('<p class="header-text">4. Sınıf Testleri</p>', unsafe_allow_html=True)
+    st.markdown('<h3 style="color:white; text-align:center;">4. Sınıf Testleri</h3>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
-    
     with col1:
         if st.button("📝\nTestler"): change_page('kategoriler')
         if st.button("🎬\nVideolar"): pass
-        if st.button("🎮\nOyunlar"): pass
     with col2:
         if st.button("❓\nRastgele"): pass
         if st.button("❤️\nFavoriler"): pass
-        if st.button("📅\nTakvim"): pass
     with col3:
         if st.button("📖\nKonu"): pass
-        if st.button("📊\nİstatistik"): pass
         if st.button("❌\nHesap Sil"): pass
-    
-    st.markdown('<div style="background-color:#689F38; color:white; padding:10px; border-radius:15px; text-align:center; margin-top:20px;">🚫 Reklamları Kaldır</div>', unsafe_allow_html=True)
+    st.button("🚫 Reklamları Kaldır", use_container_width=True)
 
 # 2. ADIM: KATEGORİLER
 elif st.session_state.page == 'kategoriler':
-    st.markdown('<p class="header-text">KATEGORİLER</p>', unsafe_allow_html=True)
-    dersler = [("📐", "Matematik"), ("📚", "Türkçe"), ("🧪", "Fen Bilimleri"), ("🌍", "Sosyal Bilgiler")]
-    
-    for icon, ders in dersler:
+    st.markdown('<h3 style="color:white;">KATEGORİLER</h3>', unsafe_allow_html=True)
+    for ders in ["Matematik", "Türkçe", "Fen Bilimleri", "Sosyal Bilgiler"]:
         st.markdown('<div class="cat-btn">', unsafe_allow_html=True)
-        if st.button(f"{icon} {ders} \n ✓ Kategori", key=ders):
-            change_page('test_listesi')
+        if st.button(f"📚 {ders}", key=ders): change_page('test_listesi')
         st.markdown('</div>', unsafe_allow_html=True)
-    
     if st.button("⬅️ Geri"): change_page('home')
 
 # 3. ADIM: TEST LİSTESİ
 elif st.session_state.page == 'test_listesi':
-    st.markdown('<p class="header-text">Fen Bilimleri: Güneş ve Ay</p>', unsafe_allow_html=True)
-    
-    tests = [("Güneş'in Yapısı Test 1", 14, 12, 2, 85), ("Ay'ın Evreleri Test 1", 12, 10, 2, 80)]
-    
-    for title, q, d, y, p in tests:
-        st.markdown(f"""
-            <div class="test-card">
-                <div style="font-weight:bold;">📋 {title}</div>
-                <div class="stats-container">
-                    <div>{q}<br><small>SORU</small></div>
-                    <div>{d}<br><small>DOĞRU</small></div>
-                    <div>{y}<br><small>YANLIŞ</small></div>
-                    <div>{p}<br><small>PUAN</small></div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        if st.button(f"🔄 {title} Çöz", key=title):
-            st.session_state.current_question = 0
-            change_page('quiz')
-            
+    st.markdown('<h3 style="color:white;">Güneş, Dünya ve Ay</h3>', unsafe_allow_html=True)
+    st.markdown(f"""<div class="test-card"><b>📋 Güneş'in Yapısı Test 1</b><br>14 Soru | Puan: 85</div>""", unsafe_allow_html=True)
+    if st.button("🔄 Yeniden Çöz"): change_page('quiz')
     if st.button("⬅️ Geri"): change_page('kategoriler')
 
-# 4. ADIM: SORU ÇÖZME EKRANI (YENİ!)
+# 4. ADIM: SORU ÇÖZME EKRANI (YENİ GÖRSELE GÖRE)
 elif st.session_state.page == 'quiz':
-    st.markdown('<p class="header-text">Soru 1 / 10</p>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="question-box">Aşağıdakilerden hangisi Güneş\'in özelliklerinden biri değildir?</div>', unsafe_allow_html=True)
-    
-    secenekler = ["A) Isı ve ışık kaynağıdır.", "B) Katmanlardan oluşur.", "C) Dünya'nın etrafında döner.", "D) Küre şeklindedir."]
-    
-    for secenek in secenekler:
-        if st.button(secenek, use_container_width=True):
-            st.success("Cevabınız kaydedildi!")
-            # Burada bir sonraki soruya geçiş mantığı kurulabilir
-    
-    col_prev, col_next = st.columns(2)
-    with col_prev:
-        if st.button("⬅️ Önceki"): pass
-    with col_next:
-        if st.button("Sonraki ➡️"): pass
+    # Üst Bilgi Barı: Zaman, Soru Sayısı, Skor
+    st.markdown(f"""
+        <div class="quiz-header">
+            <span>⏰ 02:31</span>
+            <span style="font-weight:bold;">{st.session_state.q_index} / 14</span>
+            <span class="score-badge wrong-bg">{st.session_state.wrongs}</span>
+            <span class="score-badge correct-bg">{st.session_state.corrects}</span>
+            <span>📝</span>
+        </div>
+    """, unsafe_allow_html=True)
 
-    if st.button("🛑 Testi Bitir"): change_page('test_listesi')
+    # Soru Alanı
+    st.markdown("""
+        <div class="question-container">
+            Güneş ile ilgili bilgi edinebilmek için bazı yöntemlerden yararlanılır.<br><br>
+            <b>Aşağıdakilerden hangisi Güneş ile ilgili bilgi edinmek için doğru ve uygun bir yöntem <u>değildir</u>?</b><br><br>
+            A) Uzaydaki teleskopların çekmiş olduğu Güneş fotoğraflarını incelemek<br>
+            B) Güneş'in aylara ve mevsimlere göre aldığı konumları karşılaştırmak<br>
+            C) Büyüteç ve benzeri merceklerle Güneş'e doğrudan bakmak<br>
+            D) Güneş'e yakın uçuş gerçekleştirebilecek donanımda uzay araçları tasarlayıp göndermek
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Reklam Alanı (Görseldeki mobilya reklamı temsili)
+    st.info("📺 Reklam Alanı")
+
+    # Alt Cevap Butonları (A, B, C, D)
+    colA, colB, colC, colD = st.columns(4)
+    with colA: st.button("A", key="btnA", use_container_width=True)
+    with colB: st.button("B", key="btnB", use_container_width=True) # Görselde B kırmızı
+    with colC: st.button("C", key="btnC", use_container_width=True) # Görselde C yeşil
+    with colD: st.button("D", key="btnD", use_container_width=True)
+
+    # Alt Fonksiyonel Bar (Ünlem, Kalp, Ok, X)
+    st.write("---")
+    f_col1, f_col2, f_col3, f_col4 = st.columns(4)
+    with f_col1: st.button("⚠️")
+    with f_col2: st.button("❤️")
+    with f_col3: 
+        if st.button("➡️"): 
+            st.session_state.q_index += 1
+            st.rerun()
+    with f_col4: 
+        if st.button("❌"): change_page('test_listesi')
 
 # --- SABİT ALT NAVİGASYON ---
 st.markdown("""

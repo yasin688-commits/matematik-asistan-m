@@ -3,78 +3,105 @@ import streamlit as st
 # Sayfa Ayarları
 st.set_page_config(page_title="5. Sınıf Tüm Dersler", layout="centered")
 
-# Görseldeki Mobile Yakın Tasarım İçin CSS
+# CSS ile Görseldeki Tasarımı Bire Bir Uygulama
 st.markdown("""
     <style>
-    .main {
-        background-color: #001C30;
-    }
-    .stButton>button {
-        width: 100%;
-        height: 100px;
-        border-radius: 15px;
-        border: none;
-        color: black;
-        font-weight: bold;
-        font-size: 16px;
-    }
-    /* Kart Renkleri */
-    div[data-testid="stHorizontalBlock"] > div:nth-child(1) button { background-color: #90CAF9; } /* Mavi */
-    div[data-testid="stHorizontalBlock"] > div:nth-child(2) button { background-color: #A5D6A7; } /* Yeşil */
-    div[data-testid="stHorizontalBlock"] > div:nth-child(3) button { background-color: #EF9A9A; } /* Kırmızı */
+    .main { background-color: #001C30; }
     
+    /* Kategori Kart Tasarımı */
+    .category-card {
+        background-color: #FF8A80; /* Görseldeki kırmızı/somon tonu */
+        border-radius: 20px;
+        padding: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        color: #102A43;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+    }
+    .category-icon { font-size: 35px; margin-right: 15px; }
+    .category-text { font-weight: bold; font-size: 20px; }
+    .category-subtext { font-size: 14px; color: white; display: block; }
+
+    /* Başlık Stili */
     .header-text {
         color: white;
-        text-align: center;
-        font-size: 24px;
+        font-size: 20px;
         font-weight: bold;
-        padding-bottom: 20px;
+        padding: 10px 0;
+        border-bottom: 2px solid #333;
+        margin-bottom: 20px;
+    }
+    
+    /* Navigasyon Barı */
+    .nav-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: white;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Başlık
-st.markdown('<p class="header-text">4. Sınıf Testleri</p>', unsafe_allow_html=True)
+# Sayfa Yönetimi (Navigasyon)
+if 'page' not in st.session_state:
+    st.session_state.page = 'home'
 
-# 3x3 Izgara Yapısı (Grid)
-col1, col2, col3 = st.columns(3)
+# --- FONKSİYON: KATEGORİ KARTI OLUŞTURMA ---
+def category_item(icon, title):
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        st.markdown(f"<div style='font-size:40px; text-align:center; padding-top:10px;'>{icon}</div>", unsafe_allow_html=True)
+    with col2:
+        if st.button(f"{title}\n\n✓ Kategori", key=title, use_container_width=True):
+            st.session_state.page = f"test_{title}"
+            st.rerun()
 
-with col1:
-    if st.button("📝\nTestler"):
-        st.info("Testler Sayfası Hazırlanıyor...")
-    if st.button("🎬\nVideolar"):
-        st.info("Videolar Sayfası Hazırlanıyor...")
-    if st.button("🎮\nEğitici Oyunlar"):
-        st.info("Oyunlar Sayfası Hazırlanıyor...")
+# --- EKRAN 1: ANA SAYFA (GRID) ---
+if st.session_state.page == 'home':
+    st.markdown('<p style="color:white; text-align:center; font-size:24px;">4. Sınıf Testleri</p>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("📝\nTestler"):
+            st.session_state.page = 'kategoriler'
+            st.rerun()
+    # (Diğer ana sayfa butonlarını buraya ekleyebilirsin...)
+    st.write("Ana sayfadaki 'Testler' butonuna basarak kategorilere geçebilirsin.")
 
-with col2:
-    if st.button("❓\nRastgele Mod"):
-        st.info("Rastgele Sorular Getiriliyor...")
-    if st.button("❤️\nFavori Sorular"):
-        st.info("Favorileriniz...")
-    if st.button("📅\nÖnemli Günler"):
-        st.info("Takvim Açılıyor...")
+# --- EKRAN 2: KATEGORİLER (LİSTE) ---
+elif st.session_state.page == 'kategoriler':
+    st.markdown('<p class="header-text">KATEGORİLER</p>', unsafe_allow_html=True)
 
-with col3:
-    if st.button("📖\nKonu Anlatımı"):
-        st.info("Konu Listesi...")
-    if st.button("📊\nİstatistiklerim"):
-        st.info("Başarı Durumunuz...")
-    if st.button("❌\nHesabımı Sil"):
-        st.warning("Emin misiniz?")
+    # Kategori Listesi (Görseldeki Sırayla)
+    category_item("📐", "Matematik")
+    category_item("📚", "Türkçe")
+    category_item("🧪", "Fen Bilimleri")
+    category_item("🌍", "Sosyal Bilgiler")
+    category_item("🇬🇧", "İngilizce")
+    category_item("🕌", "Din Kültürü")
 
-st.write("---")
+    # Geri Dönüş ve Alt Navigasyon
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    if st.button("⬅️ Ana Sayfaya Dön"):
+        st.session_state.page = 'home'
+        st.rerun()
 
-# Reklamları Kaldır Butonu
-if st.button("🚫 Reklamları Kaldır", use_container_width=True):
-    st.success("Premium üyelik sayfasına yönlendiriliyorsunuz...")
-
-# Alt Navigasyon (Simüle edilmiş)
+# --- ALT NAVİGASYON (Tüm sayfalarda görünür) ---
 st.markdown("""
-    <div style="background-color: white; padding: 10px; border-radius: 10px; display: flex; justify-content: space-around;">
-        <span style="color: blue; font-size: 20px;">🏠</span>
-        <span style="font-size: 20px;">📋</span>
-        <span style="font-size: 20px;">⏹️</span>
-        <span style="font-size: 20px;">⭐</span>
+    <div class="nav-bar">
+        <span>🏠</span>
+        <span>📋</span>
+        <span>📊</span>
+        <span>❤️</span>
+        <span>◀️</span>
     </div>
     """, unsafe_allow_html=True)

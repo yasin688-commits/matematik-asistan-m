@@ -1,182 +1,157 @@
 import streamlit as st
 
-# 1. SAYFA AYARLARI VE TASARIM (CSS)
-st.set_page_config(page_title="5. Sınıf Eğitim Paneli", layout="centered")
+# 1. SAYFA AYARLARI VE TASARIM
+st.set_page_config(page_title="Akıllı Eğitim Paneli", layout="centered")
 
 st.markdown("""
     <style>
     .main { background-color: #001C30; }
-    
-    /* Üst Bar Tasarımı */
-    .quiz-header {
-        display: flex; justify-content: space-around; align-items: center;
-        background-color: #1a3a5a; padding: 12px; border-radius: 12px; color: white; margin-bottom: 15px;
-    }
+    .quiz-header { display: flex; justify-content: space-around; align-items: center; background-color: #1a3a5a; padding: 12px; border-radius: 12px; color: white; margin-bottom: 15px; }
     .score-badge { padding: 5px 15px; border-radius: 20px; font-weight: bold; min-width: 40px; text-align: center; }
     .correct-bg { background-color: #4CAF50; }
     .wrong-bg { background-color: #F44336; }
-    
-    /* Soru Kutusu */
-    .question-box {
-        background-color: white; color: black; padding: 25px; border-radius: 10px;
-        font-size: 18px; line-height: 1.6; margin-bottom: 15px; border-left: 8px solid #2196F3;
-    }
-    
-    /* Ana Sayfa Butonları */
-    .stButton>button { width: 100%; border-radius: 12px; height: 60px; font-weight: bold; }
-    
-    /* Kategori Kartları (Somon Rengi) */
+    .question-box { background-color: white; color: black; padding: 25px; border-radius: 10px; font-size: 18px; line-height: 1.6; margin-bottom: 15px; border-left: 8px solid #2196F3; }
+    .stButton>button { width: 100%; border-radius: 12px; height: 55px; font-weight: bold; }
     .cat-card button { background-color: #FF8A80 !important; color: #102A43 !important; height: 80px !important; }
-
-    /* Test Listesi Kartları (Yeşil) */
     .test-card { background-color: #8BC34A; border-radius: 20px; padding: 15px; margin-bottom: 10px; color: #102A43; }
-
-    /* Sabit Alt Navigasyon */
     .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px; z-index: 1000; border-top: 1px solid #ccc; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. YAPAY ZEKA DESTEKLİ SORU BANKASI
-SORU_BANKASI = [
-    {
-        "id": 1,
-        "soru": "<b>Soru 1:</b> Güneş ile ilgili bilgi edinmek için bazı yöntemlerden yararlanılır. Aşağıdakilerden hangisi Güneş ile ilgili bilgi edinmek için doğru bir yöntem <u>değildir</u>?",
-        "gorsel": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg/320px-The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg",
-        "A": "Uzaydaki teleskopların çektiği fotoğrafları incelemek",
-        "B": "Güneş'in mevsimlere göre konumunu karşılaştırmak",
-        "C": "Büyüteç ve merceklerle Güneş'e doğrudan bakmak",
-        "D": "Güneş'e yakın uçuş yapacak uzay araçları tasarlamak",
-        "cevap": "C"
-    },
-    {
-        "id": 2,
-        "soru": "<b>Soru 2:</b> Ay'ın kendi ekseni etrafındaki dönüş süresi ile Dünya etrafındaki dolanma süresi eşit olduğu için hangisi gerçekleşir?",
-        "gorsel": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/280px-FullMoon2010.jpg",
-        "A": "Ay her zaman dolunay görünür.",
-        "B": "Ay'ın hep aynı yüzünü görürüz.",
-        "C": "Ay'ın evreleri oluşmaz.",
-        "D": "Dünya, Ay'dan daha hızlı döner.",
-        "cevap": "B"
-    }
-]
+# 2. DİNAMİK VERİ YAPISI (Dersler ve Testler)
+DERS_VERILERI = {
+    "Matematik": [
+        {"id": "mat1", "ad": "Doğal Sayılar Test 1", "sorular": [
+            {"s": "25 + 34 işleminin sonucu kaçtır?", "a": "54", "b": "59", "c": "60", "d": "61", "cvp": "B"}
+        ]},
+        {"id": "mat2", "ad": "Çarpma İşlemi Test 1", "sorular": []}
+    ],
+    "Fen Bilimleri": [
+        {"id": "fen1", "ad": "Güneş'in Yapısı Test 1", "sorular": [
+            {"s": "Güneş ne tür bir gök cismidir?", "a": "Gezegen", "b": "Uydu", "c": "Yıldız", "d": "Bulutsu", "cvp": "C"}
+        ]},
+        {"id": "fen2", "ad": "Ay'ın Evreleri Test 1", "sorular": []}
+    ],
+    "Türkçe": [
+        {"id": "tur1", "ad": "Sözcükte Anlam Test 1", "sorular": []}
+    ]
+}
 
-# 3. OTURUM YÖNETİMİ (SESSION STATE)
+# 3. OTURUM YÖNETİMİ (Session State)
 if 'page' not in st.session_state: st.session_state.page = 'home'
+if 'secilen_ders' not in st.session_state: st.session_state.secilen_ders = None
+if 'secilen_test_id' not in st.session_state: st.session_state.secilen_test_id = None
 if 'q_idx' not in st.session_state: st.session_state.q_idx = 0
-if 'corrects' not in st.session_state: st.session_state.corrects = 0
-if 'wrongs' not in st.session_state: st.session_state.wrongs = 0
-if 'selected' not in st.session_state: st.session_state.selected = None
+
+# GERÇEK VERİLER: Her testin sonucunu burada saklıyoruz (Başlangıçta hepsi 0)
+if 'istatistikler' not in st.session_state:
+    st.session_state.istatistikler = {tid: {"d": 0, "y": 0, "p": 0} for ders in DERS_VERILERI.values() for tid in [t["id"] for t in ders]}
 
 def navigate(to):
     st.session_state.page = to
     st.rerun()
 
-# 4. SAYFA İÇERİKLERİ
+# 4. SAYFALAR
 
-# --- EKRAN 1: ANA SAYFA ---
+# --- ANA SAYFA ---
 if st.session_state.page == 'home':
-    st.markdown('<h2 style="color:white; text-align:center;">4. Sınıf Testleri</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 style="color:white; text-align:center;">5. Sınıf Tüm Dersler</h2>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("📝\nTestler"): navigate('kategoriler')
         if st.button("🎬\nVideolar"): pass
-        if st.button("🎮\nOyunlar"): pass
     with col2:
         if st.button("❓\nRastgele"): pass
         if st.button("❤️\nFavoriler"): pass
-        if st.button("📅\nTakvim"): pass
     with col3:
         if st.button("📖\nKonu"): pass
         if st.button("📊\nİstatistik"): pass
-        if st.button("❌\nHesap Sil"): pass
     st.button("🚫 Reklamları Kaldır", use_container_width=True)
 
-# --- EKRAN 2: KATEGORİLER ---
+# --- KATEGORİLER (DERS SEÇİMİ) ---
 elif st.session_state.page == 'kategoriler':
     st.markdown('<h3 style="color:white; border-bottom: 1px solid #444;">KATEGORİLER</h3>', unsafe_allow_html=True)
-    dersler = [("📐", "Matematik"), ("📚", "Türkçe"), ("🧪", "Fen Bilimleri"), ("🌍", "Sosyal Bilgiler"), ("🇬🇧", "İngilizce"), ("🕌", "Din Kültürü")]
-    for icon, ders in dersler:
+    for ders_adi in DERS_VERILERI.keys():
         st.markdown('<div class="cat-card">', unsafe_allow_html=True)
-        if st.button(f"{icon} {ders} \n ✓ Kategori"): navigate('test_listesi')
+        if st.button(f"📚 {ders_adi} \n ✓ Kategori"):
+            st.session_state.secilen_ders = ders_adi
+            navigate('test_listesi')
         st.markdown('</div>', unsafe_allow_html=True)
-    if st.button("⬅️ Ana Sayfaya Dön"): navigate('home')
+    if st.button("⬅️ Geri"): navigate('home')
 
-# --- EKRAN 3: TEST LİSTESİ ---
+# --- TEST LİSTESİ (DERSE ÖZEL VE GERÇEK VERİLİ) ---
 elif st.session_state.page == 'test_listesi':
-    st.markdown('<h3 style="color:white;">Güneş, Dünya ve Ay</h3>', unsafe_allow_html=True)
-    tests = [("Güneş'in Yapısı Test 1", 14, 12, 2, 85), ("Ay'ın Evreleri Test 1", 12, 10, 2, 80)]
-    for title, q, d, y, p in tests:
+    ders = st.session_state.secilen_ders
+    st.markdown(f'<h3 style="color:white;">{ders} Testleri</h3>', unsafe_allow_html=True)
+    
+    for test in DERS_VERILERI[ders]:
+        stats = st.session_state.istatistikler[test["id"]]
+        soru_sayisi = len(test["sorular"])
+        
         st.markdown(f"""
             <div class="test-card">
-                <div style="font-weight:bold;">📋 {title}</div>
+                <div style="font-weight:bold;">📋 {test['ad']}</div>
                 <div style="font-size:12px;">✓ İstatistiklerim</div>
                 <div style="display:flex; justify-content:space-around; background:rgba(255,255,255,0.2); border-radius:10px; padding:5px; margin-top:10px; text-align:center;">
-                    <div>{q}<br><small>SORU</small></div><div>{d}<br><small>DOĞRU</small></div>
-                    <div>{y}<br><small>YANLIŞ</small></div><div>{p}<br><small>PUAN</small></div>
+                    <div>{soru_sayisi}<br><small>SORU</small></div>
+                    <div>{stats['d']}<br><small>DOĞRU</small></div>
+                    <div>{stats['y']}<br><small>YANLIŞ</small></div>
+                    <div>{stats['p']}<br><small>PUAN</small></div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button(f"🔄 Yeniden Çöz - {title}"):
-            st.session_state.q_idx = 0
-            navigate('quiz')
-    if st.button("⬅️ Geri Dön"): navigate('kategoriler')
-
-# --- EKRAN 4: SORU ÇÖZME EKRANI ---
-elif st.session_state.page == 'quiz':
-    curr = SORU_BANKASI[st.session_state.q_idx]
+        
+        if st.button(f"🔄 Yeniden Çöz", key=test["id"]):
+            if soru_sayisi > 0:
+                st.session_state.secilen_test_id = test["id"]
+                st.session_state.q_idx = 0
+                navigate('quiz')
+            else:
+                st.warning("Bu testin soruları henüz eklenmedi.")
     
-    # Üst Bilgi Barı
+    if st.button("⬅️ Kategorilere Dön"): navigate('kategoriler')
+
+# --- SORU EKRANI ---
+elif st.session_state.page == 'quiz':
+    # Seçilen testi bul
+    ders_adi = st.session_state.secilen_ders
+    test_id = st.session_state.secilen_test_id
+    test_verisi = next(t for t in DERS_VERILERI[ders_adi] if t["id"] == test_id)
+    soru = test_verisi["sorular"][st.session_state.q_idx]
+    
+    stats = st.session_state.istatistikler[test_id]
+
     st.markdown(f"""
         <div class="quiz-header">
-            <span>⏰ 02:31</span>
-            <span style="font-weight:bold;">{st.session_state.q_idx + 1} / {len(SORU_BANKASI)}</span>
-            <span class="score-badge wrong-bg">{st.session_state.wrongs}</span>
-            <span class="score-badge correct-bg">{st.session_state.corrects}</span>
+            <span>⏰ 02:30</span>
+            <span style="font-weight:bold;">{st.session_state.q_idx + 1} / {len(test_verisi['sorular'])}</span>
+            <span class="score-badge wrong-bg">{stats['y']}</span>
+            <span class="score-badge correct-bg">{stats['d']}</span>
             <span>📝</span>
         </div>
     """, unsafe_allow_html=True)
 
-    if curr["gorsel"]: st.image(curr["gorsel"], use_container_width=True)
-    st.markdown(f'<div class="question-box">{curr["soru"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="question-box">{soru["s"]}</div>', unsafe_allow_html=True)
 
-    # Şıklar (A, B, C, D)
-    for key in ['A', 'B', 'C', 'D']:
-        if st.button(f"{key}) {curr[key]}", key=f"btn_{key}", use_container_width=True):
-            st.session_state.selected = key
+    for harf in ['a', 'b', 'c', 'd']:
+        if st.button(f"{harf.upper()}) {soru[harf]}", key=f"q_{harf}"):
+            if harf.upper() == soru["cvp"]:
+                st.session_state.istatistikler[test_id]["d"] += 1
+                st.session_state.istatistikler[test_id]["p"] += 10
+                st.success("DOĞRU!")
+            else:
+                st.session_state.istatistikler[test_id]["y"] += 1
+                st.error(f"YANLIŞ! Doğru: {soru['cvp']}")
+            
+            # 1 saniye sonra diğer soruya veya listeye dön
+            if st.session_state.q_idx < len(test_verisi['sorular']) - 1:
+                st.session_state.q_idx += 1
+            else:
+                st.balloons()
+                st.info("Test Tamamlandı!")
+                if st.button("Listeye Dön"): navigate('test_listesi')
 
-    if st.session_state.selected:
-        if st.session_state.selected == curr["cevap"]: st.success("Doğru!")
-        else: st.error(f"Yanlış! Doğru Cevap: {curr['cevap']}")
+    if st.button("❌ Testten Çık"): navigate('test_listesi')
 
-    # Alt Fonksiyonel Butonlar
-    st.write("---")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: st.button("⚠️")
-    with c2: st.button("❤️")
-    with c3:
-        if st.button("➡️"): # Sonraki Soruya Geçiş Mantığı
-            if st.session_state.selected:
-                if st.session_state.selected == curr["cevap"]: st.session_state.corrects += 1
-                else: st.session_state.wrongs += 1
-                
-                if st.session_state.q_idx < len(SORU_BANKASI) - 1:
-                    st.session_state.q_idx += 1
-                    st.session_state.selected = None
-                    st.rerun()
-                else:
-                    st.success("Test Bitti!")
-                    if st.button("Sonuçlara Dön"): navigate('test_listesi')
-            else: st.warning("Lütfen bir şık seçin!")
-    with c4:
-        if st.button("❌"): navigate('test_listesi')
-
-# 5. SABİT ALT NAVİGASYON (Tüm sayfalarda görünür)
-st.markdown("""
-    <div class="nav-bar">
-        <span style="font-size:24px;">🏠</span>
-        <span style="font-size:24px;">📋</span>
-        <span style="font-size:24px;">📊</span>
-        <span style="font-size:24px;">❤️</span>
-        <span style="font-size:24px;">◀️</span>
-    </div>
-    """, unsafe_allow_html=True)
+# SABİT ALT NAVİGASYON
+st.markdown('<div class="nav-bar">🏠 📋 📊 ❤️ ◀️</div>', unsafe_allow_html=True)

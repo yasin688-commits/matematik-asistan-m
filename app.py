@@ -1,107 +1,118 @@
 import streamlit as st
 
 # Sayfa Ayarları
-st.set_page_config(page_title="5. Sınıf Tüm Dersler", layout="centered")
+st.set_page_config(page_title="5. Sınıf Test Paneli", layout="centered")
 
-# CSS ile Görseldeki Tasarımı Bire Bir Uygulama
+# Gelişmiş CSS (3. Adım Tasarımı İçin)
 st.markdown("""
     <style>
     .main { background-color: #001C30; }
     
-    /* Kategori Kart Tasarımı */
-    .category-card {
-        background-color: #FF8A80; /* Görseldeki kırmızı/somon tonu */
+    /* Test Kartı Tasarımı */
+    .test-card {
+        background-color: #8BC34A; /* Görseldeki yeşil tonu */
         border-radius: 20px;
         padding: 15px;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
+        margin-bottom: 15px;
         color: #102A43;
-        text-decoration: none;
-        cursor: pointer;
-        border: none;
-    }
-    .category-icon { font-size: 35px; margin-right: 15px; }
-    .category-text { font-weight: bold; font-size: 20px; }
-    .category-subtext { font-size: 14px; color: white; display: block; }
-
-    /* Başlık Stili */
-    .header-text {
-        color: white;
-        font-size: 20px;
-        font-weight: bold;
-        padding: 10px 0;
-        border-bottom: 2px solid #333;
-        margin-bottom: 20px;
     }
     
-    /* Navigasyon Barı */
-    .nav-bar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: white;
+    .test-title {
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+
+    .stats-container {
         display: flex;
         justify-content: space-around;
-        padding: 10px 0;
-        border-top-left-radius: 20px;
-        border-top-right-radius: 20px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 5px;
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    .stat-box { font-size: 12px; font-weight: bold; }
+    .stat-val { font-size: 16px; display: block; }
+
+    /* Yeniden Çöz Butonu */
+    .stButton>button {
+        border-radius: 20px;
+    }
+    
+    .header-style {
+        color: white;
+        padding: 10px;
+        border-bottom: 1px solid #444;
+        margin-bottom: 15px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Sayfa Yönetimi (Navigasyon)
+# Oturum Yönetimi
 if 'page' not in st.session_state:
     st.session_state.page = 'home'
 
-# --- FONKSİYON: KATEGORİ KARTI OLUŞTURMA ---
-def category_item(icon, title):
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        st.markdown(f"<div style='font-size:40px; text-align:center; padding-top:10px;'>{icon}</div>", unsafe_allow_html=True)
-    with col2:
-        if st.button(f"{title}\n\n✓ Kategori", key=title, use_container_width=True):
-            st.session_state.page = f"test_{title}"
-            st.rerun()
+# --- FONKSİYON: TEST KARTI OLUŞTURUCU ---
+def draw_test_card(title, q_count, correct, wrong, score):
+    with st.container():
+        # HTML ile görsel yapıyı kuruyoruz
+        st.markdown(f"""
+            <div class="test-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div class="test-title">📋 {title}</div>
+                        <div style="font-size: 13px;">✓ İstatistiklerim</div>
+                        <div class="stats-container">
+                            <div class="stat-box"><span class="stat-val">{q_count}</span>SORU</div>
+                            <div class="stat-box"><span class="stat-val">{correct}</span>DOĞRU</div>
+                            <div class="stat-box"><span class="stat-val">{wrong}</span>YANLIŞ</div>
+                            <div class="stat-box"><span class="stat-val">{score}</span>Puan</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Sağ taraftaki "Yeniden Çöz" butonunu Streamlit butonu olarak ekliyoruz
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            if st.button(f"🔄 Yeniden Çöz", key=title):
+                st.write(f"{title} başlatılıyor...")
 
-# --- EKRAN 1: ANA SAYFA (GRID) ---
+# --- EKRANLAR ---
+
+# 1. Ana Sayfa ve 2. Kategoriler kısmını önceki kodlardan koruyoruz...
+# (Basitleştirmek için doğrudan 3. adıma odaklanalım)
+
 if st.session_state.page == 'home':
-    st.markdown('<p style="color:white; text-align:center; font-size:24px;">4. Sınıf Testleri</p>', unsafe_allow_html=True)
+    st.title("4. Sınıf Testleri")
+    if st.button("Testlere Git"):
+        st.session_state.page = 'test_listesi'
+        st.rerun()
+
+elif st.session_state.page == 'test_listesi':
+    # Üst Bilgi
+    st.markdown('<div class="header-style">Güneş, Dünya ve Ay</div>', unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("📝\nTestler"):
-            st.session_state.page = 'kategoriler'
-            st.rerun()
-    # (Diğer ana sayfa butonlarını buraya ekleyebilirsin...)
-    st.write("Ana sayfadaki 'Testler' butonuna basarak kategorilere geçebilirsin.")
+    # Test Verileri (Örnek)
+    draw_test_card("Güneş'in Yapısı ve Özellikleri Test 1", 14, 12, 2, 85)
+    draw_test_card("Güneş'in Yapısı ve Özellikleri Test 2", 12, 9, 3, 75)
+    draw_test_card("Ay'ın Yapısı ve Özellikleri Test 1", 14, 11, 3, 78)
+    draw_test_card("Ay'ın Yapısı ve Özellikleri Test 2", 14, 9, 5, 64)
 
-# --- EKRAN 2: KATEGORİLER (LİSTE) ---
-elif st.session_state.page == 'kategoriler':
-    st.markdown('<p class="header-text">KATEGORİLER</p>', unsafe_allow_html=True)
-
-    # Kategori Listesi (Görseldeki Sırayla)
-    category_item("📐", "Matematik")
-    category_item("📚", "Türkçe")
-    category_item("🧪", "Fen Bilimleri")
-    category_item("🌍", "Sosyal Bilgiler")
-    category_item("🇬🇧", "İngilizce")
-    category_item("🕌", "Din Kültürü")
-
-    # Geri Dönüş ve Alt Navigasyon
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    if st.button("⬅️ Ana Sayfaya Dön"):
+    if st.button("⬅️ Geri Dön"):
         st.session_state.page = 'home'
         st.rerun()
 
-# --- ALT NAVİGASYON (Tüm sayfalarda görünür) ---
+# Alt Navigasyon Barı
 st.markdown("""
-    <div class="nav-bar">
-        <span>🏠</span>
-        <span>📋</span>
-        <span>📊</span>
-        <span>❤️</span>
-        <span>◀️</span>
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 10px; display: flex; justify-content: space-around; border-top: 1px solid #ccc;">
+        <span style="font-size: 25px;">🏠</span>
+        <span style="font-size: 25px;">📋</span>
+        <span style="font-size: 25px;">📈</span>
+        <span style="font-size: 25px;">❤️</span>
+        <span style="font-size: 25px; color: blue;">⬅️</span>
     </div>
     """, unsafe_allow_html=True)

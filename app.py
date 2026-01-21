@@ -122,31 +122,26 @@ st.markdown(custom_css, unsafe_allow_html=True)
 # --------------------
 # SESSION STATE
 # --------------------
-if "page" not in st.session_state:
-    st.session_state.page = "home"
+def _init_state():
+    defaults = {
+        "page": "home",
+        "score": 0,
+        "total_questions": 0,
+        "correct_answers": 0,
+        "question_data": None,
+        "history": [],
+        "subject_stats": {},
+        "seen_correct": set(),
+        "used_question_ids": set(),  # o oturumdaki tüm sorular (20'lik set)
+        "question_no": 1,
+        "question_limit": 20,
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
 
-if "score" not in st.session_state:
-    st.session_state.score = 0
 
-if "total_questions" not in st.session_state:
-    st.session_state.total_questions = 0
-
-if "correct_answers" not in st.session_state:
-    st.session_state.correct_answers = 0
-
-if "question_data" not in st.session_state:
-    st.session_state.question_data = None
-
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-if "subject_stats" not in st.session_state:
-    # subject -> {"total": int, "correct": int}
-    st.session_state.subject_stats = {}
-
-if "seen_correct" not in st.session_state:
-    # Doğru yapılan sorular tekrar sorulmaz (id set)
-    st.session_state.seen_correct = set()
+_init_state()
 
 
 # --------------------
@@ -926,15 +921,15 @@ def render_header():
 def render_sidebar():
     with st.sidebar:
         st.markdown("### 🎯 Mod Seçimi")
-        page_labels = ["Ana Sayfa", "Test Modu", "İstatistikler"]
-        label_to_key = {"Ana Sayfa": "home", "Test Modu": "test", "İstatistikler": "stats"}
+        page_labels = ["Ana Sayfa", "Test", "İstatistik"]
+        label_to_key = {"Ana Sayfa": "home", "Test": "test", "İstatistik": "stats"}
         key_to_label = {v: k for k, v in label_to_key.items()}
 
         current_label = key_to_label.get(st.session_state.page, "Ana Sayfa")
-        selected_label = st.radio(
+        selected_label = st.segmented_control(
             "Sayfa",
             options=page_labels,
-            index=page_labels.index(current_label),
+            default=current_label,
         )
         st.session_state.page = label_to_key[selected_label]
 
@@ -955,37 +950,21 @@ def render_sidebar():
             index=0,
         )
 
-        st.markdown("---")
+        st.caption("Bu uygulama 5. sınıf için optimize edildi. Her test 20 soruluk.")
 
-        st.markdown("### 🧩 Öğrenme Seviyesi")
-        level = st.selectbox(
-            "Sınıf düzeyi",
-            options=["4. Sınıf", "5. Sınıf"],
-            index=0,
-        )
-
+        level = "5. Sınıf"
         topic = None
         if subject == "Matematik":
-            if level == "4. Sınıf":
-                topic = st.selectbox(
-                    "Konu",
-                    options=[
-                        "Toplama / Çıkarma",
-                        "Çarpma / Bölme",
-                        "Problem Çözme",
-                    ],
-                )
-            else:
-                topic = st.selectbox(
-                    "Konu",
-                    options=[
-                        "Doğal Sayılar / İşlemler",
-                        "Oran / Orantı",
-                        "Geometri (Çevre / Alan)",
-                    ],
-                )
+            topic = st.selectbox(
+                "Konu",
+                options=[
+                    "Doğal Sayılar / İşlemler",
+                    "Oran / Orantı",
+                    "Geometri (Çevre / Alan)",
+                ],
+            )
         else:
-            st.caption("Bu derste sorular **görsel odaklı** ve genelde **çoktan seçmeli** gelir.")
+            st.caption("Görsel odaklı, çoktan seçmeli sorular gelir.")
 
         st.markdown("---")
 
@@ -1090,6 +1069,19 @@ def render_test(subject: str, level: str, topic: str | None):
 
     st.markdown("### 📝 Yeni Nesil Soru")
 
+    # Test akışı: 20 soru
+    st.session_state.question_limit = 20
+
+    # Yeni teste girildiğinde sayaçları koru, bitince sıfırla
+    if st.session_state.question_no > st.session_state.question_limit:
+        st.success("Test bitti! 20 soruyu tamamladın. Yeni test için 'Yeni Soru'ya basabilirsin.")
+        if st.button("🔄 Yeni Teste Başla"):
+            st.session_state.question_no = 1
+            st.session_state.used_question_ids = set()
+            reset_question()
+            st.rerun()
+        return
+
     if st.session_state.question_data is None:
         max_tries = 30
         for _ in range(max_tries):
@@ -1115,9 +1107,14 @@ def render_test(subject: str, level: str, topic: str | None):
 
             # Doğru yapılan sorular tekrar sorulmasın
             cid = candidate.get("id")
-            if not cid or cid not in st.session_state.seen_correct:
-                st.session_state.question_data = candidate
-                break
+            if cid:
+                if cid in st.session_state.seen_correct:
+                    continue
+                if cid in st.session_state.used_question_ids:
+                    continue
+                st.session_state.used_question_ids.add(cid)
+            st.session_state.question_data = candidate
+            break
         else:
             # Çok nadir: havuz tükendi/çok tekrar var
             st.session_state.question_data = candidate
@@ -1138,6 +1135,7 @@ def render_test(subject: str, level: str, topic: str | None):
                     {difficulty_badge(qdata["difficulty"])}
                 </div>
             </div>
+            <div class="card-subtitle">Soru {st.session_state.question_no} / {st.session_state.question_limit}</div>
             <div class="question-text">{qdata["q"].replace(chr(10), "<br>")}</div>
         </div>
         """,
@@ -1202,8 +1200,9 @@ def render_test(subject: str, level: str, topic: str | None):
 
             next_col1, next_col2 = st.columns([1, 1])
             with next_col1:
-                if st.button("🆕 Yeni Soru", use_container_width=True):
+                if st.button("🆕 Sonraki Soru", use_container_width=True):
                     reset_question()
+                    st.session_state.question_no += 1
                     st.rerun()
             with next_col2:
                 if st.button("🏠 Ana Sayfa", use_container_width=True):

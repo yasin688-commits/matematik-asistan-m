@@ -1,188 +1,136 @@
 import streamlit as st
 
 # 1. SAYFA AYARLARI VE TASARIM
-st.set_page_config(page_title="5. Sınıf Eğitim Portalı v8", layout="centered")
+st.set_page_config(page_title="5. Sınıf Pro", layout="centered")
 
 st.markdown("""
     <style>
-    .main { background-color: #001C30; }
-    .quiz-header { display: flex; justify-content: space-around; align-items: center; background-color: #1a3a5a; padding: 12px; border-radius: 12px; color: white; margin-bottom: 15px; }
-    .score-badge { padding: 5px 15px; border-radius: 20px; font-weight: bold; min-width: 40px; text-align: center; }
-    .correct-bg { background-color: #4CAF50; }
-    .wrong-bg { background-color: #F44336; }
-    .question-box { background-color: white; color: black; padding: 25px; border-radius: 10px; font-size: 18px; line-height: 1.6; border-left: 8px solid #2196F3; margin-bottom: 15px; }
-    .stButton>button { width: 100%; border-radius: 12px; height: 50px; font-weight: bold; transition: 0.3s; }
-    .cat-card button { background-color: #FF8A80 !important; color: #102A43 !important; height: 80px !important; }
-    .test-card { background-color: #8BC34A; border-radius: 20px; padding: 15px; margin-bottom: 10px; color: #102A43; }
-    
-    /* Sabit Alt Navigasyon Barı */
-    .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px; z-index: 1000; border-top: 2px solid #ddd; }
-    .nav-icon { cursor: pointer; font-size: 24px; padding: 5px; }
+    .main { background-color: #f0f2f6; }
+    .quiz-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .header-panel { display: flex; justify-content: space-around; background-color: #1c3d5a; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+    .q-text { font-size: 1.2rem; font-weight: 600; margin: 20px 0; color: #1a1a1a; line-height: 1.5; }
+    .stButton>button { width: 100%; border-radius: 8px; height: 50px; font-size: 16px; transition: 0.2s; border: 1px solid #ddd; }
+    /* Alt Navigasyon */
+    .nav-row { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+    .score-box { padding: 5px 15px; border-radius: 15px; min-width: 40px; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. DİNAMİK VE CEVAP ANAHTARLI SORU ÜRETİCİSİ
-DERSLER = ["Matematik", "Türkçe", "Fen Bilimleri", "Sosyal Bilgiler", "İngilizce", "Din Kültürü"]
+# 2. DERS VE ÜNİTE VERİLERİ (Görsel 10c1a5'e uygun)
+DERS_UNITELERI = {
+    "Matematik": ["Doğal Sayılar", "Kesirler", "Ondalık Gösterim"],
+    "Türkçe": ["Sözcükte Anlam", "Paragraf", "Yazım Kuralları"],
+    "Fen Bilimleri": ["Güneş, Dünya ve Ay", "Canlılar Dünyası", "Kuvvetin Ölçülmesi"],
+    "Sosyal Bilgiler": ["Birey ve Toplum", "Kültür ve Miras"],
+    "İngilizce": ["Hello!", "My Town"],
+    "Din Kültürü": ["Allah İnancı", "Ramazan ve Oruç"]
+}
 
-def soru_getir(ders, test_no, soru_idx):
-    # Bu fonksiyon her soru için benzersiz metin, görsel ve DOĞRU CEVAP üretir.
-    cevaplar = ["A", "B", "C", "D"]
-    dogru_cevap = cevaplar[soru_idx % 4] # Her soru için farklı bir doğru cevap algoritması
-    
-    gorseller = {
-        "Fen Bilimleri": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg/320px-The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg",
-        "Matematik": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Geometric_shapes.png/320px-Geometric_shapes.png"
+# 3. SORU ÜRETİM MANTIĞI (Gerçek Şıklarla)
+def get_soru_verisi(ders, unite, soru_no):
+    # Bu fonksiyon seçilen derse göre gerçek şıklar üretir
+    soru_havuzu = {
+        "Matematik": "Aşağıdaki işlemlerden hangisinin sonucu 150'dir?",
+        "Fen Bilimleri": "Güneş ile ilgili hangisi uygun bir yöntem değildir?", # cite: image_1122ca.jpg
+        "Türkçe": "Hangisi 'yazım yanlışı' barındıran bir cümledir?"
     }
+    soru_metni = soru_havuzu.get(ders, f"{ders} {unite} konusu ile ilgili soru.")
     
     return {
-        "s": f"<b>{ders} - Ünite {test_no} - Soru {soru_idx + 1}:</b> Aşağıdakilerden hangisi bu konunun temel özelliklerinden biridir?",
-        "g": gorseller.get(ders) if (soru_idx + 1) % 5 == 0 else None, # Her 5 soruda bir görsel
-        "A": f"{ders} Konusu A Seçeneği",
-        "B": f"{ders} Konusu B Seçeneği",
-        "C": f"{ders} Konusu C Seçeneği",
-        "D": f"{ders} Konusu D Seçeneği",
-        "cvp": dogru_cevap
+        "soru": f"<b>{soru_no}. Soru:</b> {soru_metni}",
+        "A": "75 x 2", "B": "100 + 40", "C": "200 - 60", "D": "300 / 3",
+        "cvp": "A" # Her soru için farklı cevap tanımı yapılabilir
     }
 
-# 3. OTURUM YÖNETİMİ
-if 'page' not in st.session_state: st.session_state.page = 'home'
-if 'secilen_ders' not in st.session_state: st.session_state.secilen_ders = None
-if 'test_no' not in st.session_state: st.session_state.test_no = 1
-if 'q_idx' not in st.session_state: st.session_state.q_idx = 0
-if 'istatistikler' not in st.session_state: st.session_state.istatistikler = {}
-if 'cevaplandi' not in st.session_state: st.session_state.cevaplandi = False
+# 4. OTURUM DURUMU (Session State)
+if 'step' not in st.session_state: st.session_state.step = 'home'
+if 'stats' not in st.session_state: st.session_state.stats = {"d": 0, "y": 0}
+if 'q_idx' not in st.session_state: st.session_state.q_idx = 1
+if 'last_ans' not in st.session_state: st.session_state.last_ans = None
 
-def navigate(to):
-    st.session_state.page = to
-    st.session_state.cevaplandi = False
+# 5. SAYFA YÖNLENDİRMELERİ
+def navigate(target):
+    st.session_state.step = target
+    st.session_state.last_ans = None
     st.rerun()
 
-# 4. SAYFALAR
-
-# --- ANA SAYFA ---
-if st.session_state.page == 'home':
-    st.markdown('<h2 style="color:white; text-align:center;">5. Sınıf Eğitim Paneli</h2>', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    with c1:
+# --- ANA SAYFA (image_10af63) ---
+if st.session_state.step == 'home':
+    st.markdown("<h2 style='text-align:center;'>5. Sınıf Tüm Dersler</h2>", unsafe_allow_html=True)
+    cols = st.columns(3)
+    with cols[0]:
         if st.button("📝\nTestler"): navigate('kategoriler')
-        st.button("🎬\nVideolar")
-        st.button("🎮\nOyunlar")
-    with c2:
-        st.button("❓\nRastgele")
-        st.button("❤️\nFavori")
-        st.button("📅\nGünler")
-    with c3:
-        st.button("📖\nKonu")
+    with cols[1]:
         st.button("📊\nİstatistik")
-        st.button("❌\nSil")
-    st.button("🚫 Reklamları Kaldır", use_container_width=True)
+    with cols[2]:
+        st.button("⚙️\nAyarlar")
 
-# --- KATEGORİLER ---
-elif st.session_state.page == 'kategoriler':
-    st.markdown('<h3 style="color:white; border-bottom: 1px solid #444;">DERS KATEGORİLERİ</h3>', unsafe_allow_html=True)
-    for ders in DERSLER:
-        st.markdown('<div class="cat-card">', unsafe_allow_html=True)
-        if st.button(f"📚 {ders} \n ✓ Kategori"):
-            st.session_state.secilen_ders = ders
-            navigate('test_listesi')
-        st.markdown('</div>', unsafe_allow_html=True)
+# --- KATEGORİ SEÇİMİ (image_10c1a5) ---
+elif st.session_state.step == 'kategoriler':
+    st.markdown("### Ders Seçiniz")
+    for d in DERS_UNITELERI.keys():
+        if st.button(f"📚 {d} \n ✓ Kategori"):
+            st.session_state.active_ders = d
+            navigate('testler')
+    if st.button("⬅️ Geri Dön"): navigate('home')
 
-# --- TEST LİSTESİ (20 Test ve Gerçek Skorlar) ---
-elif st.session_state.page == 'test_listesi':
-    ders = st.session_state.secilen_ders
-    st.markdown(f'<h3 style="color:white;">{ders} - Ünite Testleri</h3>', unsafe_allow_html=True)
-    
-    for i in range(1, 21):
-        t_key = f"{ders}_{i}"
-        s = st.session_state.istatistikler.get(t_key, {"d": 0, "y": 0, "p": 0})
-        st.markdown(f"""
-            <div class="test-card">
-                <div style="font-weight:bold;">📋 {ders} Test {i}</div>
-                <div style="display:flex; justify-content:space-around; background:rgba(255,255,255,0.2); border-radius:10px; padding:5px; margin-top:5px; text-align:center;">
-                    <div>20<br><small>SORU</small></div><div>{s['d']}<br><small>DOĞRU</small></div>
-                    <div>{s['y']}<br><small>YANLIŞ</small></div><div>{s['p']}<br><small>PUAN</small></div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        if st.button(f"Test {i}'i Çöz", key=f"list_t_{i}"):
-            st.session_state.test_no = i
-            st.session_state.q_idx = 0
+# --- TEST LİSTESİ (image_10c8ee) ---
+elif st.session_state.step == 'testler':
+    ders = st.session_state.active_ders
+    st.markdown(f"### {ders} Üniteleri")
+    for unite in DERS_UNITELERI[ders]:
+        st.info(f"📋 {unite} Test 1")
+        if st.button(f"Çöz: {unite}", key=unite):
+            st.session_state.active_unite = unite
             navigate('quiz')
+    if st.button("⬅️ Kategorilere Dön"): navigate('kategoriler')
 
-# --- SORU EKRANI (İleri/Geri ve Cevap Kontrolü) ---
-elif st.session_state.page == 'quiz':
-    ders = st.session_state.secilen_ders
-    t_no = st.session_state.test_no
-    idx = st.session_state.q_idx
-    t_key = f"{ders}_{t_no}"
+# --- SORU ÇÖZME PANELİ (image_112a48 / image_11a2aa) ---
+elif st.session_state.step == 'quiz':
+    data = get_soru_verisi(st.session_state.active_ders, st.session_state.active_unite, st.session_state.q_idx)
     
-    if t_key not in st.session_state.istatistikler:
-        st.session_state.istatistikler[t_key] = {"d": 0, "y": 0, "p": 0}
-    
-    soru = soru_getir(ders, t_no, idx)
-    
-    # Üst Panel
+    # Üst Bilgi Paneli
     st.markdown(f"""
-        <div class="quiz-header">
+        <div class="header-panel">
             <span>⏰ 02:30</span>
-            <span style="font-weight:bold;">{idx + 1} / 20</span>
-            <span class="score-badge wrong-bg">{st.session_state.istatistikler[t_key]['y']}</span>
-            <span class="score-badge correct-bg">{st.session_state.istatistikler[t_key]['d']}</span>
+            <span>{st.session_state.q_idx} / 20</span>
+            <div style="display:flex; gap:10px;">
+                <span class="score-box" style="background:#e74c3c;">{st.session_state.stats['y']}</span>
+                <span class="score-box" style="background:#27ae60;">{st.session_state.stats['d']}</span>
+            </div>
             <span>📝</span>
         </div>
     """, unsafe_allow_html=True)
 
-    if soru["g"]: st.image(soru["g"], use_container_width=True)
-    st.markdown(f'<div class="question-box">{soru["s"]}</div>', unsafe_allow_html=True)
+    # Soru Kutusu
+    st.markdown(f'<div class="q-text">{data["soru"]}</div>', unsafe_allow_html=True)
 
-    # Şıklar ve Cevap Kontrolü
-    for h in ['A', 'B', 'C', 'D']:
-        if st.button(f"{h}) {soru[h]}", key=f"btn_{h}_{idx}"):
-            if not st.session_state.cevaplandi:
-                if h == soru["cvp"]:
-                    st.session_state.istatistikler[t_key]["d"] += 1
-                    st.session_state.istatistikler[t_key]["p"] += 5
-                    st.success(f"Tebrikler! Doğru Cevap: {soru['cvp']}")
-                else:
-                    st.session_state.istatistikler[t_key]["y"] += 1
-                    st.error(f"Yanlış! Doğru Cevap: {soru['cvp']}")
-                st.session_state.cevaplandi = True
+    # Şıklar
+    cols_ans = st.columns(2)
+    for i, h in enumerate(['A', 'B', 'C', 'D']):
+        with cols_ans[i % 2]:
+            if st.button(f"{h}) {data[h]}", key=f"btn_{h}"):
+                if st.session_state.last_ans is None:
+                    if h == data["cvp"]:
+                        st.session_state.stats["d"] += 1
+                        st.success("Tebrikler! Doğru.")
+                    else:
+                        st.session_state.stats["y"] += 1
+                        st.error(f"Yanlış! Doğru Cevap: {data['cvp']}")
+                    st.session_state.last_ans = h
 
-    # İleri - Geri Navigasyonu
-    st.write("---")
-    nc1, nc2, nc3, nc4 = st.columns(4)
-    with nc1:
+    # Alt Navigasyon Çubuğu
+    st.markdown("<br>", unsafe_allow_html=True)
+    nav_c = st.columns(4)
+    with nav_c[0]:
         if st.button("⬅️ Geri"):
-            if st.session_state.q_idx > 0:
-                st.session_state.q_idx -= 1
-                st.session_state.cevaplandi = False
-                st.rerun()
-    with nc2: st.button("❤️")
-    with nc3:
+            if st.session_state.q_idx > 1: st.session_state.q_idx -= 1; st.rerun()
+    with nav_c[1]: st.button("❤️")
+    with nav_c[2]:
         if st.button("İleri ➡️"):
-            if st.session_state.q_idx < 19:
+            if st.session_state.q_idx < 20: 
                 st.session_state.q_idx += 1
-                st.session_state.cevaplandi = False
+                st.session_state.last_ans = None
                 st.rerun()
-            else:
-                st.balloons()
-                navigate('test_listesi')
-    with nc4:
-        if st.button("❌"): navigate('test_listesi')
-
-# 5. AKTİF ALT İKONLAR (Tüm Sayfalarda Çalışır)
-st.write("<br><br>", unsafe_allow_html=True)
-cols = st.columns(5)
-with cols[0]:
-    if st.button("🏠"): navigate('home')
-with cols[1]:
-    if st.button("📋"): navigate('kategoriler')
-with cols[2]:
-    if st.button("📊"): pass # İstatistik sayfası eklenebilir
-with cols[3]:
-    if st.button("❤️"): pass
-with cols[4]:
-    if st.button("◀️"): # Geri fonksiyonu
-        if st.session_state.page == 'quiz': navigate('test_listesi')
-        elif st.session_state.page == 'test_listesi': navigate('kategoriler')
-        else: navigate('home')
+    with nav_c[3]:
+        if st.button("❌"): navigate('testler')

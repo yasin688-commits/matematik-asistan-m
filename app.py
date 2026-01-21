@@ -50,9 +50,10 @@ custom_css = """
 }
 
 .question-text {
-    font-size: 1.05rem;
-    line-height: 1.6;
+    font-size: 1.15rem;
+    line-height: 1.7;
     color: #111827;
+    font-weight: 500;
 }
 
 .tag {
@@ -147,7 +148,7 @@ _init_state()
 # --------------------
 # SORU ÜRETİCİLER
 # --------------------
-def _font(size: int = 18) -> ImageFont.ImageFont:
+def _font(size: int = 22) -> ImageFont.ImageFont:
     try:
         return ImageFont.truetype("arial.ttf", size=size)
     except Exception:
@@ -160,36 +161,36 @@ def _img_bytes(img: Image.Image) -> bytes:
     return buf.getvalue()
 
 
-def _card_image(title: str, lines: list[str], w: int = 900, h: int = 420) -> bytes:
-    img = Image.new("RGB", (w, h), (250, 252, 255))
+def _card_image(title: str, lines: list[str], w: int = 1100, h: int = 520) -> bytes:
+    img = Image.new("RGB", (w, h), (245, 247, 252))
     draw = ImageDraw.Draw(img)
 
     # header bar
-    draw.rounded_rectangle([20, 20, w - 20, 88], radius=18, fill=(233, 243, 255), outline=(210, 225, 245))
-    draw.text((40, 38), title, fill=(15, 23, 42), font=_font(22))
+    draw.rounded_rectangle([24, 24, w - 24, 104], radius=20, fill=(225, 238, 255), outline=(200, 218, 245))
+    draw.text((48, 40), title, fill=(15, 23, 42), font=_font(26))
 
     # body card
-    draw.rounded_rectangle([20, 110, w - 20, h - 20], radius=18, fill=(255, 255, 255), outline=(220, 230, 242))
+    draw.rounded_rectangle([24, 118, w - 24, h - 24], radius=20, fill=(255, 255, 255), outline=(220, 230, 242))
 
-    y = 140
+    y = 148
     for line in lines:
-        draw.text((40, y), line, fill=(17, 24, 39), font=_font(18))
-        y += 32
+        draw.text((48, y), line, fill=(17, 24, 39), font=_font(22))
+        y += 38
 
     return _img_bytes(img)
 
 
 def _bar_chart_image(labels: list[str], values: list[int], title: str) -> bytes:
-    w, h = 900, 420
-    img = Image.new("RGB", (w, h), (250, 252, 255))
+    w, h = 1100, 520
+    img = Image.new("RGB", (w, h), (245, 247, 252))
     draw = ImageDraw.Draw(img)
-    draw.rounded_rectangle([20, 20, w - 20, h - 20], radius=18, fill=(255, 255, 255), outline=(220, 230, 242))
-    draw.text((40, 32), title, fill=(15, 23, 42), font=_font(22))
+    draw.rounded_rectangle([24, 24, w - 24, h - 24], radius=20, fill=(255, 255, 255), outline=(220, 230, 242))
+    draw.text((48, 40), title, fill=(15, 23, 42), font=_font(26))
 
     max_v = max(values) if values else 1
-    chart_left, chart_top, chart_right, chart_bottom = 60, 90, w - 60, h - 80
-    draw.line([chart_left, chart_bottom, chart_right, chart_bottom], fill=(148, 163, 184), width=2)
-    draw.line([chart_left, chart_top, chart_left, chart_bottom], fill=(148, 163, 184), width=2)
+    chart_left, chart_top, chart_right, chart_bottom = 90, 120, w - 90, h - 110
+    draw.line([chart_left, chart_bottom, chart_right, chart_bottom], fill=(148, 163, 184), width=3)
+    draw.line([chart_left, chart_top, chart_left, chart_bottom], fill=(148, 163, 184), width=3)
 
     bar_w = int((chart_right - chart_left) / max(1, len(values)) * 0.6)
     gap = int((chart_right - chart_left) / max(1, len(values)) * 0.4)
@@ -199,55 +200,55 @@ def _bar_chart_image(labels: list[str], values: list[int], title: str) -> bytes:
         bar_h = int((chart_bottom - chart_top) * (v / max_v))
         x1, y1 = x, chart_bottom - bar_h
         x2, y2 = x + bar_w, chart_bottom
-        draw.rounded_rectangle([x1, y1, x2, y2], radius=8, fill=(99, 102, 241), outline=(79, 70, 229))
-        draw.text((x1, chart_bottom + 8), lab, fill=(55, 65, 81), font=_font(16))
-        draw.text((x1, y1 - 22), str(v), fill=(55, 65, 81), font=_font(16))
+        draw.rounded_rectangle([x1, y1, x2, y2], radius=10, fill=(99, 102, 241), outline=(79, 70, 229))
+        draw.text((x1, chart_bottom + 10), lab, fill=(55, 65, 81), font=_font(20))
+        draw.text((x1, y1 - 26), str(v), fill=(55, 65, 81), font=_font(20))
         x += bar_w + gap
 
     return _img_bytes(img)
 
 
 def _timeline_image(events: list[tuple[str, str]], title: str) -> bytes:
-    w, h = 900, 420
-    img = Image.new("RGB", (w, h), (250, 252, 255))
+    w, h = 1100, 520
+    img = Image.new("RGB", (w, h), (245, 247, 252))
     draw = ImageDraw.Draw(img)
-    draw.rounded_rectangle([20, 20, w - 20, h - 20], radius=18, fill=(255, 255, 255), outline=(220, 230, 242))
-    draw.text((40, 32), title, fill=(15, 23, 42), font=_font(22))
+    draw.rounded_rectangle([24, 24, w - 24, h - 24], radius=20, fill=(255, 255, 255), outline=(220, 230, 242))
+    draw.text((48, 40), title, fill=(15, 23, 42), font=_font(26))
 
-    line_y = 220
-    draw.line([80, line_y, w - 80, line_y], fill=(148, 163, 184), width=4)
+    line_y = 260
+    draw.line([120, line_y, w - 120, line_y], fill=(148, 163, 184), width=5)
 
     n = max(1, len(events))
-    step = int((w - 160) / n)
-    x = 80 + step // 2
+    step = int((w - 240) / n)
+    x = 120 + step // 2
     for i, (year, label) in enumerate(events):
-        draw.ellipse([x - 10, line_y - 10, x + 10, line_y + 10], fill=(16, 185, 129))
-        draw.text((x - 22, line_y - 44), year, fill=(15, 23, 42), font=_font(16))
-        draw.text((x - 80, line_y + 20), label, fill=(55, 65, 81), font=_font(16))
+        draw.ellipse([x - 12, line_y - 12, x + 12, line_y + 12], fill=(16, 185, 129))
+        draw.text((x - 26, line_y - 52), year, fill=(15, 23, 42), font=_font(20))
+        draw.text((x - 90, line_y + 26), label, fill=(55, 65, 81), font=_font(20))
         x += step
 
     return _img_bytes(img)
 
 
 def _mini_map_image(points: dict[str, tuple[int, int]], title: str) -> bytes:
-    w, h = 900, 420
-    img = Image.new("RGB", (w, h), (250, 252, 255))
+    w, h = 1100, 520
+    img = Image.new("RGB", (w, h), (245, 247, 252))
     draw = ImageDraw.Draw(img)
-    draw.rounded_rectangle([20, 20, w - 20, h - 20], radius=18, fill=(255, 255, 255), outline=(220, 230, 242))
-    draw.text((40, 32), title, fill=(15, 23, 42), font=_font(22))
+    draw.rounded_rectangle([24, 24, w - 24, h - 24], radius=20, fill=(255, 255, 255), outline=(220, 230, 242))
+    draw.text((48, 40), title, fill=(15, 23, 42), font=_font(26))
 
     # map area
-    mx1, my1, mx2, my2 = 60, 90, w - 60, h - 60
-    draw.rounded_rectangle([mx1, my1, mx2, my2], radius=18, fill=(236, 253, 245), outline=(167, 243, 208))
+    mx1, my1, mx2, my2 = 90, 120, w - 90, h - 90
+    draw.rounded_rectangle([mx1, my1, mx2, my2], radius=20, fill=(236, 253, 245), outline=(167, 243, 208))
     # simple "sea" band
-    draw.rounded_rectangle([mx1, my2 - 70, mx2, my2], radius=18, fill=(219, 234, 254), outline=(191, 219, 254))
-    draw.text((mx1 + 16, my2 - 55), "DENİZ", fill=(30, 64, 175), font=_font(16))
+    draw.rounded_rectangle([mx1, my2 - 80, mx2, my2], radius=20, fill=(219, 234, 254), outline=(191, 219, 254))
+    draw.text((mx1 + 18, my2 - 64), "DENİZ", fill=(30, 64, 175), font=_font(20))
 
     for name, (x, y) in points.items():
         px = mx1 + x
         py = my1 + y
         draw.ellipse([px - 10, py - 10, px + 10, py + 10], fill=(239, 68, 68))
-        draw.text((px + 14, py - 12), name, fill=(15, 23, 42), font=_font(18))
+        draw.text((px + 14, py - 12), name, fill=(15, 23, 42), font=_font(22))
 
     return _img_bytes(img)
 
@@ -1100,7 +1101,7 @@ def render_test(subject: str, level: str, topic: str | None):
                     "subject": "Matematik",
                     "type": "choice",
                     "choices": _make_numeric_choices(a, k=4),
-                    "image": None,
+                    "image": _card_image("Matematik Sorusu", [q], w=1100, h=360),
                 }
             else:
                 candidate = generate_subject_question(subject, level)
@@ -1152,12 +1153,19 @@ def render_test(subject: str, level: str, topic: str | None):
 
         qtype = qdata.get("type", "number")
         if qtype == "choice":
-            user_answer = st.radio(
+            opts = qdata.get("choices", [])
+            letters = ["A", "B", "C", "D", "E", "F"]
+            display_opts = [f"{letters[i]}) {opt}" for i, opt in enumerate(opts)]
+            selected_display = st.radio(
                 "Seçeneğini işaretle",
-                options=qdata.get("choices", []),
+                options=display_opts,
                 index=None,
                 horizontal=False,
             )
+            user_answer = None
+            if selected_display:
+                sel_idx = display_opts.index(selected_display)
+                user_answer = opts[sel_idx]
         elif qtype == "text":
             user_answer = st.text_input("Cevabını yaz")
         else:
@@ -1171,7 +1179,7 @@ def render_test(subject: str, level: str, topic: str | None):
 
         if check_clicked:
             if qtype == "choice":
-                correct = user_answer == qdata["a"]
+                correct = user_answer is not None and user_answer == qdata["a"]
             elif qtype == "text":
                 correct = _normalize_text(user_answer) == _normalize_text(str(qdata["a"]))
             else:
